@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.6.2
+// @version      0.6.3
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -19,8 +19,9 @@
 
 (function() {
     'use strict';
+    console.log("Script on");
 
-    let versionNumber = "v0.6.2";
+    let versionNumber = "v0.6.3";
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
