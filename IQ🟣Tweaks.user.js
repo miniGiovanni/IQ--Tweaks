@@ -1,7 +1,11 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.5.5
+// @version      0.6.2
 // @author       mini
+// @homepage     https://github.com/miniGiovanni/IQ--Tweaks
+// @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
+// @downloadURL  https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/IQ%F0%9F%9F%A3Tweaks.user.js
+// @updateURL    https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/IQ%F0%9F%9F%A3Tweaks.user.js
 // @copyright    WTFPL license, 2025.
 // @namespace    http://tampermonkey.net/
 // @description  Minor tweaks to informatique.nl, such as adding a manual apply filters button, making stock status icons consistent and more.
@@ -9,14 +13,14 @@
 // @match        http://*.informatique.nl/*
 // @match        https://informatique.nl/*
 // @match        http://informatique.nl/*
-// @icon         https://www.informatique.nl/new2023/assets/icons/favicon.ico
+// @icon         https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico
 // @run-at       document-end
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    let versionNumber = "v0.5.3";
+    let versionNumber = "v0.6.2";
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
