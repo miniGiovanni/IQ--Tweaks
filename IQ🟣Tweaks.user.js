@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.7.1
+// @version      0.7.3
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -22,14 +22,14 @@
 (function() {
     'use strict';
 
-    let versionNumber = "v0.7.1";
+    let versionNumber = "v0.7.2";
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
     adjustLevertijdIconsOnSearch();
     adjustLevertijdIconsElsewhere();
     addArtikelNummerToSearchPage();
-    addLogoChanger();
+    addLogoChangerToggle();
 
     /// Credits a the bottom of the page
     function addCredits(versionNumber){
@@ -168,37 +168,41 @@
         });
     }
     // Define the original and new logo.
-    const logoSelector = '.informatique-logo';
     const originalLogo = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
     const lgbtLogo = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-30y-june.svg';
+    // On load
+    const storedState = localStorage.getItem('lgbtLogoEnabled');
+    let isLgbtLogoEnabled = storedState === 'true';
+
+    // Apply on load
+    updateLogo(isLgbtLogoEnabled);
+    updateToggleUI(isLgbtLogoEnabled);
 
     // Change the logo from one to the other or back.
-    function updateLogo() {
-        console.log("updateLogo called");
-        const logoImg = document.querySelector('.informatique-logo');
-        if (!logoImg) return;
+    function updateLogo(enabled) {
+        if(enabled != null){
+            const logoImg = document.querySelector('.informatique-logo');
 
-        if (logoImg.src === originalLogo) {
-            logoImg.src = lgbtLogo;
-        } else {
-            logoImg.src = originalLogo;
+            if (enabled) {
+                logoImg.src = lgbtLogo;
+            } else {
+                logoImg.src = originalLogo;
+            }
         }
     }
 
     // Logo change button and logic.
-    function addLogoChanger() {
-
+    function addLogoChangerToggle() {
         // Find the element with the logo.
         const logoElement = document.querySelector('.informatique-logo');
-
-        // Create the style for the toggle button.
         const toggleButtonStyle = document.createElement('style');
+        // Create the style for the toggle button.
         toggleButtonStyle.innerHTML = `
 .switch {
   position: relative;
   display: inline-block;
-  width: 30px;
-  height: 17px;
+  width: 10px;
+  height: 5px;
 }
 
 .switch input {
@@ -222,10 +226,10 @@
 .slider:before {
   position: absolute;
   content: "";
-  height: 13px;
-  width: 13px;
-  left: 2px;
-  bottom: 2px;
+  height: 5px;
+  width: 5px;
+  left: 0.5px;
+  bottom: 0.5px;
   background-color: white;
   -webkit-transition: .4s;
   transition: .4s;
@@ -236,18 +240,18 @@ input:checked + .slider {
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
+  box-shadow: 0 0 0.5px #2196F3;
 }
 
 input:checked + .slider:before {
-  -webkit-transform: translateX(13px);
-  -ms-transform: translateX(13px);
-  transform: translateX(13px);
+  -webkit-transform: translateX(5px);
+  -ms-transform: translateX(5px);
+  transform: translateX(5px);
 }
 
 /* Rounded sliders */
 .slider.round {
-  border-radius: 17px;
+  border-radius: 5px;
 }
 
 .slider.round:before {
@@ -263,6 +267,7 @@ input:checked + .slider:before {
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
+        checkbox.id = 'logoChangeCheckbox';
         checkbox.checked = false;
 
         // Add the function to the toggle button.
@@ -279,4 +284,28 @@ input:checked + .slider:before {
         // Insert the switch after the .informatique-logo element
         logoElement.parentNode.insertBefore(label, logoElement.nextSibling);
     }
+
+    // Function to update toggle UI
+    function updateToggleUI(enabled) {
+        document.getElementById('logoChangeCheckbox').checked = enabled;
+    }
+
+    // Observe toggle changes, invert the current value and save it locally.
+    const toggleButton = document.querySelector('#logoChangeCheckbox');
+    toggleButton.addEventListener('click', () => {
+        isLgbtLogoEnabled = !isLgbtLogoEnabled;
+        localStorage.setItem('lgbtLogoEnabled', isLgbtLogoEnabled ? 'true' : 'false');
+        updateLogo(isLgbtLogoEnabled);
+        updateToggleUI(isLgbtLogoEnabled);
+    });
+
+    // Listen for storage changes from other tabs
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'lgbtLogoEnabled') {
+            const newState = event.newValue === 'true';
+            isLgbtLogoEnabled = newState;
+            updateLogo(newState);
+            updateToggleUI(newState);
+        }
+    });
 })();
