@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.7.3
+// @version      0.7.4
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -22,7 +22,7 @@
 (function() {
     'use strict';
 
-    let versionNumber = "v0.7.2";
+    let versionNumber = "v0.7.4";
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
@@ -30,6 +30,15 @@
     adjustLevertijdIconsElsewhere();
     addArtikelNummerToSearchPage();
     addLogoChangerToggle();
+
+    // Define the original and new logo.
+    const originalLogo = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
+    const lgbtLogo = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-30y-june.svg';
+    // On load
+    const storedState = localStorage.getItem('lgbtLogoEnabled');
+    let isLgbtLogoEnabled = storedState === 'true';
+    updateLogo(isLgbtLogoEnabled);
+    updateToggleUI(isLgbtLogoEnabled);
 
     /// Credits a the bottom of the page
     function addCredits(versionNumber){
@@ -167,16 +176,6 @@
             }
         });
     }
-    // Define the original and new logo.
-    const originalLogo = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
-    const lgbtLogo = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-30y-june.svg';
-    // On load
-    const storedState = localStorage.getItem('lgbtLogoEnabled');
-    let isLgbtLogoEnabled = storedState === 'true';
-
-    // Apply on load
-    updateLogo(isLgbtLogoEnabled);
-    updateToggleUI(isLgbtLogoEnabled);
 
     // Change the logo from one to the other or back.
     function updateLogo(enabled) {
