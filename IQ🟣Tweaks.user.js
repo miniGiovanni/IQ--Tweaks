@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.6.3
+// @version      0.7.1
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -13,21 +13,23 @@
 // @match        http://*.informatique.nl/*
 // @match        https://informatique.nl/*
 // @match        http://informatique.nl/*
+// @grant        GM_getValue
+// @grant        GM_setValue
 // @icon         https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico
 // @run-at       document-end
 // ==/UserScript==
 
 (function() {
     'use strict';
-    console.log("Script on");
 
-    let versionNumber = "v0.6.3";
+    let versionNumber = "v0.7.1";
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
     adjustLevertijdIconsOnSearch();
     adjustLevertijdIconsElsewhere();
     addArtikelNummerToSearchPage();
+    addLogoChanger();
 
     /// Credits a the bottom of the page
     function addCredits(versionNumber){
@@ -164,5 +166,117 @@
                 });
             }
         });
+    }
+    // Define the original and new logo.
+    const logoSelector = '.informatique-logo';
+    const originalLogo = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
+    const lgbtLogo = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-30y-june.svg';
+
+    // Change the logo from one to the other or back.
+    function updateLogo() {
+        console.log("updateLogo called");
+        const logoImg = document.querySelector('.informatique-logo');
+        if (!logoImg) return;
+
+        if (logoImg.src === originalLogo) {
+            logoImg.src = lgbtLogo;
+        } else {
+            logoImg.src = originalLogo;
+        }
+    }
+
+    // Logo change button and logic.
+    function addLogoChanger() {
+
+        // Find the element with the logo.
+        const logoElement = document.querySelector('.informatique-logo');
+
+        // Create the style for the toggle button.
+        const toggleButtonStyle = document.createElement('style');
+        toggleButtonStyle.innerHTML = `
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 17px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 13px;
+  width: 13px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(13px);
+  -ms-transform: translateX(13px);
+  transform: translateX(13px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 17px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+`;
+
+        document.head.appendChild(toggleButtonStyle);
+
+        // Create the label with checkbox
+        const label = document.createElement('label');
+        label.className = 'switch';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = false;
+
+        // Add the function to the toggle button.
+        checkbox.addEventListener('change', function() {
+            updateLogo();
+        });
+
+        const span = document.createElement('span');
+        span.className = 'slider round';
+
+        label.appendChild(checkbox);
+        label.appendChild(span);
+
+        // Insert the switch after the .informatique-logo element
+        logoElement.parentNode.insertBefore(label, logoElement.nextSibling);
     }
 })();
