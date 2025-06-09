@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.7.7
+// @version      0.8.5
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -16,6 +16,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addValueChangeListener
+// @grant        GM_addStyle
 // @icon         https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico
 // @run-at       document-end
 // ==/UserScript==
@@ -23,7 +24,8 @@
 (async function() {
     'use strict';
 
-    const versionNumber = "0.7.7";
+    const versionNumber = "0.8.5";
+
     // Define the original and new logo, plus the logo element it should change.
     const ORIGINAL_LOGO_URL = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
     const LGBT_LOGO_URL = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-30y-june.svg';
@@ -34,6 +36,7 @@
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
+    addRefreshButtonAnimation();
     addArtikelNummerToSearchPage();
     adjustLevertijdIconsOnSearch();
     adjustLevertijdIconsElsewhere();
@@ -85,6 +88,7 @@
                 applyButton.style.display = 'block';
                 applyButton.style.marginTop = '10px';
                 applyButton.className = 'btn btn-light';
+                applyButton.id = "applyButton";
 
                 // Append the button at the bottom of the div
                 buttonDiv.appendChild(applyButton);
@@ -281,7 +285,70 @@ input:checked + .slider:before {
         }
     }
 
-    // Observe toggle changes, invert the current value and save it using GM_setValue.
+    // To make the "Filters toepassen" button more obvious, it will glow when a filter is chosen.
+    function addRefreshButtonAnimation(){
+        // Search the form and apply filter button by their IDs.
+        const FORM_SELECTOR = '#Filter';
+        const REFRESH_BUTTON_SELECTOR = '#applyButton';
+
+        // The style which changes the look of the apply filter button.
+        const FORM_CHANGED_BUTTON_STYLE = 'needs-refresh';
+
+        // Style describes the blue color, white text and glowing edge animation of the button.
+        GM_addStyle(`
+    .${FORM_CHANGED_BUTTON_STYLE} {
+        background-color: #006bb6 !important; /* Main blue color */
+        color: #ffffff !important; /* Text color changed to white */
+        border-color: #005691 !important; /* Darker shade of blue for border */
+        box-shadow: 0 0 10px rgba(0, 107, 182, 0.7); /* Box shadow based on blue */
+        animation: pulse-animation 5.0s infinite; /* Adjusted animation speed: faster than 5s, slower than original 1.5s */
+    }
+
+    @keyframes pulse-animation {
+        0% {
+            box-shadow: 0 0 0 0 rgba(0, 107, 182, 0.7); /* Pulse start color based on blue */
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(0, 107, 182, 0); /* Pulse end color (fading out) */
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(0, 107, 182, 0); /* Fully fades out */
+        }
+    }
+`);
+        // Wait for the window to load to ensure all elements are available.
+        window.addEventListener('load', () => {
+            const filterForm = document.querySelector(FORM_SELECTOR);
+            const refreshButton = document.querySelector(REFRESH_BUTTON_SELECTOR);
+
+            if(!filterForm || !refreshButton) {
+                console.error("Filter form or refresh button not found. Filter form: " + filterForm + ", refreshButton: " + refreshButton);
+                return;
+            }
+
+            // Capture the initial state of the form, using serialized data.
+            let initialFormState = getFormState(filterForm);
+
+            // This function gets called on every form change.
+            const checkFormState = () => {
+                const currentFormState = getFormState(filterForm);
+
+                // Compare the current state to the state save just before. If they are different, the button should glow.
+                if (currentFormState !== initialFormState) {
+                    // Adding the class will make the button look different.
+                    refreshButton.classList.add(FORM_CHANGED_BUTTON_STYLE);
+                } else {
+                    // If the form is back to its initial state, the class is removed so the original style is shown.
+                    refreshButton.classList.remove(FORM_CHANGED_BUTTON_STYLE);
+                }
+            };
+
+            // Detects any change to the form (i.e. checkboxes, sliders, etc.), so the button can be changed if there is a change detected.
+            filterForm.addEventListener('input', checkFormState);
+        });
+    }
+
+    // Observe changes to the logo selection toggle, invert the current value and save it using GM_setValue.
     const toggleButton = document.querySelector('#logoChangeCheckbox');
     toggleButton.addEventListener('click', async () => {
         isLgbtLogoEnabled = !isLgbtLogoEnabled;
@@ -297,4 +364,10 @@ input:checked + .slider:before {
             updateToggleUI(newValue);
         }
     });
-})();
+
+    // This function is used in addRefreshButtonAnimation(); to serialize the current state of the filter form, to compare initial with the current state.
+    function getFormState(form) {
+        return new URLSearchParams(new FormData(form)).toString();
+    }
+})
+();
