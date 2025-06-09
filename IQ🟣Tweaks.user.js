@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.8.5
+// @version      0.8.6
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -24,7 +24,7 @@
 (async function() {
     'use strict';
 
-    const versionNumber = "0.8.5";
+    const versionNumber = "0.8.6";
 
     // Define the original and new logo, plus the logo element it should change.
     const ORIGINAL_LOGO_URL = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
@@ -36,10 +36,11 @@
     addCredits(versionNumber);
     removeRefreshFromFilters();
     addRefreshFilterButton();
-    addRefreshButtonAnimation();
+    addApplyFiltersButtonAnimation();
     addArtikelNummerToSearchPage();
     adjustLevertijdIconsOnSearch();
     adjustLevertijdIconsElsewhere();
+    adjustLevertijdIconsOnProductPage();
     addLogoChangerToggle();
 
     updateLogo(isLgbtLogoEnabled);
@@ -170,6 +171,51 @@
         });
     }
 
+    /// Adjust levertijd icons on search and basket page (Yellow/orange tick or gray X icon).
+    function adjustLevertijdIconsOnProductPage() {
+        // Select all elements that match the specified classes
+        const targetElements = document.querySelectorAll('.col-lg-8.col-7.border-bottom');
+
+        targetElements.forEach(element => {
+            const textContentLower = element.textContent.toLowerCase();
+            const successSpan = element.querySelector('span.text-success');
+
+            if (textContentLower.includes("werkdagen")) {
+                if (successSpan) {
+                    // Change class from text-success to danger
+                    successSpan.classList.remove('text-success');
+                    successSpan.classList.add('danger');
+
+                    // Add the checkmark span just before the modified span
+                    const checkmarkSpan = document.createElement('span');
+                    checkmarkSpan.setAttribute('role', 'status');
+                    checkmarkSpan.style.color = 'rgb(255, 193, 7)';
+                    checkmarkSpan.setAttribute('data-bs-toggle', 'tooltip');
+                    checkmarkSpan.setAttribute('data-bs-placement', 'top');
+                    checkmarkSpan.setAttribute('title', '');
+                    checkmarkSpan.setAttribute('data-bs-html', 'true');
+                    checkmarkSpan.setAttribute('data-bs-original-title', 'Op voorraad bij leverancier');
+                    checkmarkSpan.innerHTML = '<i class="fa fa-check fa-lg" aria-hidden="true"></i>';
+
+                    successSpan.parentNode.insertBefore(checkmarkSpan, successSpan);
+                }
+            } else if (textContentLower.includes("levertijd onbekend") || textContentLower.includes("onbekende levertijd")) {
+                if (successSpan) {
+                    // Change class from text-success to text-muted
+                    successSpan.classList.remove('text-success');
+                    successSpan.classList.add('text-muted');
+
+                    // Add the times icon just before the modified span
+                    const timesIconSmall = document.createElement('small');
+                    timesIconSmall.classList.add('text-muted');
+                    timesIconSmall.innerHTML = '<i class="fa fa-times fa-lg ps-1 text-times me-1"></i>';
+
+                    successSpan.parentNode.insertBefore(timesIconSmall, successSpan);
+                }
+            }
+        });
+    }
+
     /// Adjust levertijd icons elsewhere (Yellow/orange tick, "Onbekende levertijd" already has an appropriate icon).
     function adjustLevertijdIconsElsewhere() {
         const stockDivs = document.querySelectorAll('div.card-product-list-stock');
@@ -286,7 +332,7 @@ input:checked + .slider:before {
     }
 
     // To make the "Filters toepassen" button more obvious, it will glow when a filter is chosen.
-    function addRefreshButtonAnimation(){
+    function addApplyFiltersButtonAnimation(){
         // Search the form and apply filter button by their IDs.
         const FORM_SELECTOR = '#Filter';
         const REFRESH_BUTTON_SELECTOR = '#applyButton';
@@ -301,7 +347,7 @@ input:checked + .slider:before {
         color: #ffffff !important; /* Text color changed to white */
         border-color: #005691 !important; /* Darker shade of blue for border */
         box-shadow: 0 0 10px rgba(0, 107, 182, 0.7); /* Box shadow based on blue */
-        animation: pulse-animation 5.0s infinite; /* Adjusted animation speed: faster than 5s, slower than original 1.5s */
+        animation: pulse-animation 5.0s infinite; /* Animation speed in seconds */
     }
 
     @keyframes pulse-animation {
