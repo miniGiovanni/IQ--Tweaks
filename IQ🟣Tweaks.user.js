@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.12.6
+// @version      0.12.9
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -21,19 +21,19 @@
 // @run-at       document-end
 // ==/UserScript==
 
-(async function() {
+(function() {
     'use strict';
 
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.11.5";
+    const VERSION_NUMBER = "0.12.9"; // This version number comes from your provided script
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
     const defaultSettings = {
         enableSpecialLogo: { value: false, title: "Speciaal logo", description: "Geeft het Informatique logo een speciale look!" },
-        enableSuperSpecialLogo: { value: false, title: "Super speciaal logo", description: "Nog een specialer logo, gemaakt op aanvraag." },
+        //enableSuperSpecialLogo: { value: false, title: "Super speciaal logo", description: "Nog een specialer logo, gemaakt op aanvraag." },
         enableFilterApplyButton: { value: true, title: "Filter toepassen knop", description: "Voorkomt automatisch verversen van de pagina en voegt een handmatige 'Filters toepassen' knop toe." },
         enableFilterApplyButtonAnimation: { value: true, title: "Animatie voor filterknop", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
         enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
@@ -74,7 +74,7 @@
         loadSettings();
         insertCSS();
         addCredits();
-        createControlPanel();
+        createControlPanel(); // This is where the new content will be added
         applyAllFeatures();
 
         // Add a listener, which changes from other tabs are acted upon.
@@ -540,7 +540,7 @@
     function createControlPanel() {
         const targetFooterSection = document.querySelector('section.footer-bottom');
         if (!targetFooterSection) {
-            console.warn('IQ Tweaks: Target footer section not found. Control panel will not be added.');
+            console.warn('IQ🟣Tweaks: Target footer section not found. Control panel will not be added.');
             return;
         }
 
@@ -550,11 +550,11 @@
         const toggleBtn = document.createElement('div');
         toggleBtn.id = SCRIPT_PREFIX + 'control-panel-toggle';
         toggleBtn.innerHTML = '&#9650;'; // Up arrow
-        toggleBtn.title = 'IQ Tweaks Instellingen';
+        toggleBtn.title = 'IQ🟣Tweaks Instellingen';
 
         const panel = document.createElement('div');
         panel.id = SCRIPT_PREFIX + 'control-panel';
-        panel.innerHTML = `<h3>IQ🟣Tweaks Instellingen</h3>`;
+        panel.innerHTML = `<h3>IQ🟣Tweaks Instellingen</h3>`; // Using &#x1F7E3; for the purple circle emoji
 
         panelWrapper.append(toggleBtn, panel);
         targetFooterSection.appendChild(panelWrapper);
@@ -607,6 +607,87 @@
             itemDiv.append(labelContainer, switchLabel);
             panel.appendChild(itemDiv);
         }
+
+        // --- Add the smaller text and copy bug info button ---
+        const bugReportText = document.createElement('p');
+        bugReportText.style.fontSize = '0.85em';
+        bugReportText.style.marginTop = '15px';
+        bugReportText.style.marginBottom = '10px';
+        bugReportText.innerHTML = `IQ🟣Tweaks ${VERSION_NUMBER} - Heb je een bug gevonden? Druk op deze knop om belangrijk info te kopiëren en stuur een email.`;
+
+        const copyBugInfoButton = document.createElement('button');
+        copyBugInfoButton.textContent = 'Kopieer info';
+        copyBugInfoButton.style.display = 'block';
+        copyBugInfoButton.style.width = '100%';
+        copyBugInfoButton.style.padding = '8px 12px';
+        copyBugInfoButton.style.marginBottom = '10px'; // Add some space below the button
+        copyBugInfoButton.className = 'btn btn-primary'; // Using a primary button style for prominence
+        copyBugInfoButton.id = SCRIPT_PREFIX + 'copy-bug-info-button';
+
+        panel.appendChild(document.createElement('hr')); // Optional separator for visual distinction
+        panel.appendChild(bugReportText);
+        panel.appendChild(copyBugInfoButton);
+
+        // Add event listener for the bug info copy button
+        copyBugInfoButton.addEventListener('click', () => {
+            const websiteLink = window.location.href;
+            const scriptVersion = VERSION_NUMBER;
+            const userAgent = navigator.userAgent;
+
+            let browserInfo = "Onbekende browser";
+            // Basic browser detection logic
+            // This prioritizes common browsers and tries to extract version numbers.
+            if (userAgent.includes("Chrome") && !userAgent.includes("Chromium")) {
+                const match = userAgent.match(/(Chrome)\/(\d+\.\d+\.\d+\.\d+)/);
+                if (match) browserInfo = `${match[1]} ${match[2]}`;
+            } else if (userAgent.includes("Firefox")) {
+                const match = userAgent.match(/(Firefox)\/(\d+\.\d+)/);
+                if (match) browserInfo = `${match[1]} ${match[2]}`;
+            } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
+                 const match = userAgent.match(/Version\/(\d+\.\d+\.\d+).*Safari/);
+                 if (match) browserInfo = `Safari ${match[1]}`;
+            } else if (userAgent.includes("Edg")) { // New Edge (Chromium-based)
+                const match = userAgent.match(/(Edge?)\/(\d+\.\d+)/);
+                if (match) browserInfo = `Edge ${match[2]}`;
+            } else if (userAgent.includes("Opera") || userAgent.includes("OPR")) {
+                const match = userAgent.match(/(Opera|OPR)\/(\d+\.\d+)/);
+                if (match) browserInfo = `Opera ${match[2]}`;
+            } else if (userAgent.includes("MSIE") || userAgent.includes("Trident")) { // Older IE and IE11
+                if (userAgent.includes("MSIE")) {
+                    const match = userAgent.match(/MSIE (\d+\.\d+)/);
+                    if (match) browserInfo = `Internet Explorer ${match[1]}`;
+                } else { // IE 11
+                    const match = userAgent.match(/rv:(\d+\.\d+).*Trident/);
+                    if (match) browserInfo = `Internet Explorer 11 (Trident/${match[1]})`;
+                }
+            }
+
+
+            const bugInfoToCopy = `
+- Website link: ${websiteLink}
+- IQ🟣Tweaks versie: ${scriptVersion}
+- Gebruikte webbrowser: ${browserInfo}
+            `.trim(); // .trim() to remove leading/trailing whitespace
+
+            // Copy to clipboard logic using a temporary textarea
+            const textarea = document.createElement('textarea');
+            textarea.value = bugInfoToCopy;
+            textarea.style.position = 'fixed'; // Prevents scrolling to bottom of page in some browsers
+            textarea.style.left = '-9999px'; // Move out of view
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                console.log('Bug info copied:', bugInfoToCopy);
+                showTemporaryMessage('Bug info copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy bug info: ', err);
+                showTemporaryMessage('Failed to copy bug info.');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        });
 
         toggleBtn.addEventListener('click', () => {
             panel.classList.toggle('show');
@@ -695,10 +776,10 @@
     function experimentalFeatures() {
         const isEnabled = currentSettings.enableExperimentalFeatures.value;
         if (isEnabled) {
-            console.log("IQ Tweaks: Experimental features enabled.");
+            console.log("IQ🟣Tweaks: Experimental features enabled.");
             addAITestFeature(isEnabled);
         } else {
-            console.log("IQ Tweaks: Experimental features disabled.");
+            console.log("IQ🟣Tweaks: Experimental features disabled.");
             addAITestFeature(isEnabled);
         }
     }
@@ -842,10 +923,9 @@
                 textarea.style.position = 'fixed'; // Prevents scrolling to bottom of page in some browsers
                 textarea.style.left = '-9999px'; // Move out of view
                 document.body.appendChild(textarea);
-                textarea.select(); // Select the text
+                textarea.select();
 
                 try {
-                    // Execute the copy command
                     document.execCommand('copy');
                     console.log('Text copied:', textToCopy);
                     showTemporaryMessage('Copied to clipboard!');
@@ -853,7 +933,6 @@
                     console.error('Failed to copy text: ', err);
                     showTemporaryMessage('Failed to copy text.');
                 } finally {
-                    // Remove the temporary textarea
                     document.body.removeChild(textarea);
                 }
             });
