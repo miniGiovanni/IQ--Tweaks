@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.11.5
+// @version      0.12.6
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -35,8 +35,8 @@
         enableSpecialLogo: { value: false, title: "Speciaal logo", description: "Geeft het Informatique logo een speciale look!" },
         enableSuperSpecialLogo: { value: false, title: "Super speciaal logo", description: "Nog een specialer logo, gemaakt op aanvraag." },
         enableFilterApplyButton: { value: true, title: "Filter toepassen knop", description: "Voorkomt automatisch verversen van de pagina en voegt een handmatige 'Filters toepassen' knop toe." },
-        enableFilterApplyButtonAnimation: { value: true, title: "Knopanimatie voor filters", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
-        enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op overzichtspagina's", description: "Voegt het artikelnummer toe naast de prijs op categorie- en zoekpagina's." },
+        enableFilterApplyButtonAnimation: { value: true, title: "Animatie voor filterknop", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
+        enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
         enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
         enableContentGroupAddition: { value: false, title: "Contentgroep bij categorie", description: "Voegt de contentgroep-code toe aan de breadcrumb op productpagina's." },
         enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele of onvoltooide functies in." },
@@ -134,7 +134,6 @@
             }
         }
     }
-
 
     // --- Feature Implementations ---
 
@@ -322,7 +321,6 @@
                 }
             }
         };
-
         // --- Revert all changes first ---
         document.querySelectorAll(`.${MODIFIED_CLASS}`).forEach(revertChanges);
 
@@ -420,18 +418,6 @@
                 link.appendChild(span);
             }
         });
-    }
-
-    /**
-     * Experimental features (not ready for full use) will be added here.
-     */
-    function experimentalFeatures() {
-        const isEnabled = currentSettings.enableExperimentalFeatures.value;
-        if (isEnabled) {
-            console.log("IQ Tweaks: Experimental features enabled.");
-        } else {
-            console.log("IQ Tweaks: Experimental features disabled.");
-        }
     }
 
     /**
@@ -700,6 +686,179 @@
             p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} created by mini of Hop On LLC - Original idea by 🎸`;
             p.className = 'text-muted mb-0';
             footerDiv.appendChild(p);
+        }
+    }
+
+    /**
+     * Experimental features (not ready for full use) will be added here.
+     */
+    function experimentalFeatures() {
+        const isEnabled = currentSettings.enableExperimentalFeatures.value;
+        if (isEnabled) {
+            console.log("IQ Tweaks: Experimental features enabled.");
+            addAITestFeature(isEnabled);
+        } else {
+            console.log("IQ Tweaks: Experimental features disabled.");
+            addAITestFeature(isEnabled);
+        }
+    }
+
+    /**
+     * Adds or removes the product information extraction and display feature to the page.
+     * This function can be called externally by other Tampermonkey scripts.
+     *
+     * @param {boolean} enable - If `true`, the feature will attempt to add the content.
+     * If `false`, the feature will attempt to remove any existing content added by this feature.
+     */
+    function addAITestFeature(enable) {
+        // --- Common check for existing feature elements ---
+        const existingAITestDd = Array.from(document.querySelectorAll('dd.col-lg-4.col-5.text-end.border-bottom'))
+            .find(dd => dd.textContent.trim() === 'Content AI test');
+        const existingAITestDt = existingAITestDd ? existingAITestDd.nextElementSibling : null;
+
+        if (!enable) {
+            console.log("AI Test Info feature disabled by external call. Attempting to remove existing elements.");
+            // If the feature is present, remove it
+            if (existingAITestDd && existingAITestDt && existingAITestDt.tagName.toLowerCase() === 'dt') {
+                existingAITestDd.remove();
+                existingAITestDt.remove();
+                console.log("AI Test Info feature removed successfully.");
+            } else {
+                console.log("AI Test Info feature not found on page, no removal needed.");
+            }
+            return; // Exit after handling removal
+        }
+
+        // --- If 'enable' is true, proceed with adding the feature (if not already present) ---
+        if (existingAITestDd) {
+            console.log("AI Test Info feature already present. Skipping addition.");
+            return; // Exit if the feature is already on the page
+        }
+
+        let AITestInfoParts = []; // Use an array to manage parts for easier joining
+        let lastDtElement = null; // To keep track of the last <dt> element found for insertion
+
+        // --- Helper function to find and extract text ---
+        // Iterates through all potential elements and extracts the text from the following <dt>.
+        const extractInfo = (label) => {
+            const ddElement = Array.from(document.querySelectorAll('dd.col-lg-4.col-5.text-end.border-bottom'))
+                .find(dd => dd.textContent.trim() === label);
+
+            if (ddElement) {
+                const dtElement = ddElement.nextElementSibling;
+                // Ensure the next sibling is indeed a <dt> tag.
+                if (dtElement && dtElement.tagName.toLowerCase() === 'dt') {
+                    return dtElement;
+                }
+            }
+            return null;
+        };
+
+        // --- Extracting Artikelnummer ---
+        const artikelnummerDT = extractInfo('Artikelnummer');
+        if (artikelnummerDT) {
+            AITestInfoParts.push(artikelnummerDT.textContent.trim());
+            lastDtElement = artikelnummerDT;
+        }
+
+        let vendorName = null;
+        // --- Extracting Vendor Name from img alt text ---
+        const vendorLogoImg = document.querySelector('img.vendor-logo.float-end');
+        if (vendorLogoImg && vendorLogoImg.alt) {
+            // Regex to extract text after "over " and before the final "."
+            const match = vendorLogoImg.alt.match(/over\s([^.]+)\./);
+            if (match && match[1]) {
+                vendorName = match[1].trim();
+            }
+        }
+
+        // --- Extracting Fabrikantcode ---
+        const fabrikantcodeDT = extractInfo('Fabrikantcode');
+
+        // Combine vendorName and fabrikantcode with a space, if both exist
+        if (vendorName && fabrikantcodeDT) {
+            AITestInfoParts.push(`${vendorName} ${fabrikantcodeDT.textContent.trim()}`);
+            lastDtElement = fabrikantcodeDT; // fabrikantcodeDT is the last original element found here
+        } else if (vendorName) { // Only vendor name found
+            AITestInfoParts.push(vendorName);
+            // No DT element associated with vendorName directly for insertion tracking,
+            // so lastDtElement remains whatever it was before (e.g., artikelnummerDT)
+        } else if (fabrikantcodeDT) { // Only fabrikantcode found
+            AITestInfoParts.push(fabrikantcodeDT.textContent.trim());
+            lastDtElement = fabrikantcodeDT;
+        }
+
+
+        // --- Extracting EAN Code ---
+        const eanCodeDT = extractInfo('EAN Code');
+        if (eanCodeDT) {
+            AITestInfoParts.push(eanCodeDT.textContent.trim());
+            lastDtElement = eanCodeDT; // EAN Code DT will be the definitive lastDtElement for insertion
+        }
+
+        // Join all collected parts with ", "
+        const AITestInfo = AITestInfoParts.join(', ');
+
+        // --- Insert new elements if information was found and a lastDtElement exists ---
+        // Ensure AITestInfo is not empty to avoid adding an empty field.
+        if (AITestInfo.trim() !== '' && lastDtElement) {
+            // Create the <dd> element: <dd class="col-lg-4 col-5 text-end border-bottom">Content AI test</dd>
+            const newDd = document.createElement('dd');
+            newDd.className = 'col-lg-4 col-5 text-end border-bottom';
+            newDd.textContent = 'Content AI test';
+
+            // Create the <dt> element: <dt class="col-lg-8 col-7 border-bottom"><span class="no-tel">TEXTHERE</span></dt>
+            const newDt = document.createElement('dt');
+            newDt.className = 'col-lg-8 col-7 border-bottom';
+
+            // Create the "Copy" button
+            const copyButton = document.createElement('button');
+            copyButton.style.cssText = "display: block;";
+            copyButton.className = 'btn btn-light'; // Use provided class
+            copyButton.id = 'iq-tweaks-apply-button'; // Use provided ID
+            copyButton.textContent = 'Copy';
+
+            // Create the <span> element to hold the AITestInfo text
+            const spanElement = document.createElement('span');
+            spanElement.className = 'no-tel';
+            spanElement.textContent = AITestInfo;
+
+            // Append button and text to the new <dt>
+            newDt.appendChild(copyButton);
+            newDt.appendChild(spanElement);
+
+            // Insert the new <dd> and <dt> elements right after the last found <dt>.
+            // The .after() method inserts nodes or strings after the current node.
+            lastDtElement.after(newDd);
+            newDd.after(newDt); // Insert newDt after the newDd
+
+            // --- Add event listener for the copy button ---
+            copyButton.addEventListener('click', () => {
+                const textToCopy = spanElement.textContent; // Get the content from the span
+
+                // Create a temporary textarea to copy the text to clipboard
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                textarea.style.position = 'fixed'; // Prevents scrolling to bottom of page in some browsers
+                textarea.style.left = '-9999px'; // Move out of view
+                document.body.appendChild(textarea);
+                textarea.select(); // Select the text
+
+                try {
+                    // Execute the copy command
+                    document.execCommand('copy');
+                    console.log('Text copied:', textToCopy);
+                    showTemporaryMessage('Copied to clipboard!');
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    showTemporaryMessage('Failed to copy text.');
+                } finally {
+                    // Remove the temporary textarea
+                    document.body.removeChild(textarea);
+                }
+            });
+        } else {
+            console.log("Could not find all required product info elements or AITestInfo is empty. Feature not added.");
         }
     }
 
