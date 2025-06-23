@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.12.9
+// @version      0.13.4
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -27,7 +27,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.12.9"; // This version number comes from your provided script
+    const VERSION_NUMBER = "0.13.4"; // This version number comes from your provided script
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -778,9 +778,11 @@
         if (isEnabled) {
             console.log("IQ🟣Tweaks: Experimental features enabled.");
             addAITestFeature(isEnabled);
+            toggleAttributeNameDisplay(isEnabled);
         } else {
             console.log("IQ🟣Tweaks: Experimental features disabled.");
             addAITestFeature(isEnabled);
+            toggleAttributeNameDisplay(isEnabled);
         }
     }
 
@@ -941,4 +943,65 @@
         }
     }
 
+    /**
+     * Adds the attribute name to each attribute in the filter panel
+     * @param {boolean} enable - If true, the attribute names are added to the target tags.
+     * If false, any previously added attribute names are removed.
+     */
+    function toggleAttributeNameDisplay(enable) {
+        // Select all <article> elements that have the class "filter-group"
+        const filterArticles = document.querySelectorAll('article.filter-group');
+
+        // If no articles with the specified class are found, log a message and exit the function early.
+        if (filterArticles.length === 0) {
+            console.log('No <article class="filter-group"> elements found. Script will not proceed.');
+            return;
+        }
+
+        // Iterate over each found article element.
+        filterArticles.forEach(article => {
+            // Find the first checkbox input within the current article.
+            const checkbox = article.querySelector('input.form-check-input[type="checkbox"]');
+
+            // Find the target element for appending: prioritize <h6>, then <p class="h6">.
+            const targetElement = article.querySelector('h6') || article.querySelector('p.h6');
+
+            // If either the checkbox or the target element is not found, skip to the next article.
+            if (!checkbox || !targetElement) {
+                return; // Acts like 'continue' for Array.prototype.forEach
+            }
+
+            // Get the attribute name and remove the leading "at" (case-insensitive) if present.
+            const attributeName = checkbox.name.replace(/^at/i, '');
+
+            // Check for an existing span that was previously added by this script.
+            const existingSpan = targetElement.querySelector('.tampermonkey-added-attribute-name');
+
+            if (enable) {
+                // If enabling the display:
+                // Only add if the span does not already exist within the target element.
+                if (!existingSpan) {
+                    const span = document.createElement('span');
+                    span.classList.add('tampermonkey-added-attribute-name');
+                    span.textContent = ` (${attributeName})`;
+
+                    // Find the first <i> tag within the target element.
+                    const firstITag = targetElement.querySelector('i');
+
+                    // If an <i> tag is found, insert the new span before it; otherwise, append to the end.
+                    if (firstITag) {
+                        targetElement.insertBefore(span, firstITag);
+                    } else {
+                        targetElement.appendChild(span);
+                    }
+                }
+            } else {
+                // If disabling the display:
+                // Only remove if the span currently exists within the target element.
+                if (existingSpan) {
+                    existingSpan.remove();
+                }
+            }
+        });
+    }
 })();
