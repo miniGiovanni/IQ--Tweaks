@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.13.4
+// @version      0.17.1 // Keep in sync with VERSION_NUMBER below
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
 // @downloadURL  https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/IQ%F0%9F%9F%A3Tweaks.user.js
 // @updateURL    https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/IQ%F0%9F%9F%A3Tweaks.user.js
-// @copyright    WTFPL license, 2025.
+// @copyright    WTFPL license, 2026.
 // @namespace    http://tampermonkey.net/
 // @description  Minor tweaks to informatique.nl, such as adding a manual apply filters button, making stock status icons consistent and more.
 // @match        https://*.informatique.nl/*
@@ -18,28 +18,60 @@
 // @grant        GM_addValueChangeListener
 // @grant        GM_addStyle
 // @icon         https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico
-// @run-at       document-end
+// @run-at       document-start
 // ==/UserScript==
 
 (function() {
     'use strict';
 
+    // --- Early logo swap (runs at document-start to prevent flicker) ---
+    // Read the saved setting directly from storage before the DOM exists, then watch
+    // for the logo element to appear and swap its src immediately — before first paint.
+    (function earlyLogoSwap() {
+        const SETTINGS_KEY = 'IQTweak_settings';
+        const SPECIAL_LOGO_URL = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-pride.svg';
+
+        let enabled = false;
+        try {
+            // GM_getValue returns a plain object (Tampermonkey stores/restores it directly).
+            // Do NOT JSON.parse — the value is already an object, not a JSON string.
+            // saveSettings() stores bare booleans, so the shape is { enableSpecialLogo: true/false, ... }.
+            const saved = GM_getValue(SETTINGS_KEY);
+            if (saved && typeof saved === 'object') {
+                enabled = !!saved.enableSpecialLogo;
+            }
+        } catch (e) { /* no saved setting yet — leave disabled */ }
+
+        if (!enabled) return;
+
+        // Watch for the logo element and swap it the moment it's inserted into the DOM
+        const observer = new MutationObserver(() => {
+            const logo = document.querySelector('.informatique-logo');
+            if (logo) {
+                logo.src = SPECIAL_LOGO_URL;
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    })();
+
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.13.4"; // This version number comes from your provided script
+    const VERSION_NUMBER = "0.17.1"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
     const defaultSettings = {
         enableSpecialLogo: { value: false, title: "Speciaal logo", description: "Geeft het Informatique logo een speciale look!" },
-        //enableSuperSpecialLogo: { value: false, title: "Super speciaal logo", description: "Nog een specialer logo, gemaakt op aanvraag." },
         enableFilterApplyButton: { value: true, title: "Filter toepassen knop", description: "Voorkomt automatisch verversen van de pagina en voegt een handmatige 'Filters toepassen' knop toe." },
         enableFilterApplyButtonAnimation: { value: true, title: "Animatie voor filterknop", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
         enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
         enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
-        enableContentGroupAddition: { value: false, title: "Contentgroep bij categorie", description: "Voegt de contentgroep-code toe aan de breadcrumb op productpagina's." },
-        enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele of onvoltooide functies in." },
+ enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
+ enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
+ enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
+ enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele of onvoltooide functies in." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -52,7 +84,9 @@
         enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
         enableArticleNumberToMorePlaces: articleNumberAddition,
         enableStockInformationIconFix: stockInformationIconFix,
-        enableContentGroupAddition: contentGroupAddition,
+        enableContentFeatures: contentFeatures,
+        enableEanTweakersSearch: eanTweakersSearch,
+        enableFunFeatures: funFeatures,
         enableExperimentalFeatures: experimentalFeatures,
     };
 
@@ -74,7 +108,7 @@
         loadSettings();
         insertCSS();
         addCredits();
-        createControlPanel(); // This is where the new content will be added
+        createControlPanel();
         applyAllFeatures();
 
         // Add a listener, which changes from other tabs are acted upon.
@@ -96,18 +130,19 @@
      */
     function loadSettings() {
         const savedSettings = GM_getValue(SETTINGS_KEY, {});
-        const loaded = {};
 
-        for (const key in defaultSettings) {
-            loaded[key] = { ...defaultSettings[key] }; // Start with default structure.
-
-            // Overwrite with saved value if it exists.
-            if (Object.prototype.hasOwnProperty.call(savedSettings, key)) {
-                // This handles the old format where the value was just a boolean.
-                loaded[key].value = typeof savedSettings[key] === 'boolean' ? savedSettings[key] : savedSettings[key].value;
-            }
-        }
-        currentSettings = loaded;
+        currentSettings = Object.fromEntries(
+            Object.keys(defaultSettings).map(key => {
+                const entry = { ...defaultSettings[key] };
+                if (Object.prototype.hasOwnProperty.call(savedSettings, key)) {
+                    // savedSettings stores bare booleans (current format from saveSettings()).
+                    // Handle the legacy format too, where the value was a {value: bool} object.
+                    const saved = savedSettings[key];
+                    entry.value = typeof saved === 'boolean' ? saved : saved.value;
+                }
+                return [key, entry];
+            })
+        );
     }
 
     /**
@@ -115,24 +150,20 @@
      * Only the 'value' (true/false) of each setting is saved to keep the storage clean.
      */
     function saveSettings() {
-        const settingsToSave = {};
-        for (const key in currentSettings) {
-            settingsToSave[key] = currentSettings[key].value;
-        }
+        const settingsToSave = Object.fromEntries(
+            Object.keys(currentSettings).map(key => [key, currentSettings[key].value])
+        );
         GM_setValue(SETTINGS_KEY, settingsToSave);
     }
 
     /**
      * Iterates through the feature map and calls the corresponding function for each feature.
-     * Each feature function checks the true/false state of the feature and tuns on/off based on that.
+     * Each feature function checks the true/false state of the feature and turns on/off based on that.
      */
     function applyAllFeatures() {
-        for (const featureKey in featureApplicationMap) {
-            if (Object.prototype.hasOwnProperty.call(currentSettings, featureKey)) {
-                // Call the feature function.
-                featureApplicationMap[featureKey]();
-            }
-        }
+        Object.keys(featureApplicationMap)
+        .filter(key => Object.prototype.hasOwnProperty.call(currentSettings, key))
+        .forEach(key => featureApplicationMap[key]());
     }
 
     // --- Feature Implementations ---
@@ -142,8 +173,8 @@
      */
     function specialLogo() {
         // Location of the original and special logo, so it's possible to toggle between them.
-        const ORIGINAL_LOGO_URL = 'https://www.informatique.nl/new2023/assets/img/informatique-logo-white-30y.svg?v=1';
-        const LGBT_LOGO_URL = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-30y-june.svg';
+        const ORIGINAL_LOGO_URL = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-white-less-fixed.svg';
+        const LGBT_LOGO_URL = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/informatique-logo-pride.svg';
         const logoElement = document.querySelector('.informatique-logo');
 
         if (!logoElement) return;
@@ -151,7 +182,7 @@
         logoElement.src = currentSettings.enableSpecialLogo.value ? LGBT_LOGO_URL : ORIGINAL_LOGO_URL;
     }
 
-    /// -- BEGIN of filter fixes ---
+    // --- BEGIN filter fixes ---
     /**
      * A dispatcher for the filter-related features.
      */
@@ -165,15 +196,11 @@
      * @param {boolean} enable - If true, adds the onclick attribute. If false, removes it.
      */
     function toggleFilterAutoSubmit(enable) {
-        const checkboxes = document.querySelectorAll('#Filter .form-check-input');
-        checkboxes.forEach(checkbox => {
+        document.querySelectorAll('#Filter .form-check-input').forEach(checkbox => {
             if (enable) {
                 checkbox.setAttribute('onclick', 'this.form.submit();');
-            } else {
-                // Only remove the attribute if it exists and matches.
-                if (checkbox.getAttribute('onclick') === 'this.form.submit();') {
-                    checkbox.removeAttribute('onclick');
-                }
+            } else if (checkbox.getAttribute('onclick') === 'this.form.submit();') {
+                checkbox.removeAttribute('onclick');
             }
         });
     }
@@ -204,7 +231,7 @@
 
         const applyButton = document.createElement('button');
         applyButton.textContent = 'Filters toepassen';
-        applyButton.onclick = function() { this.form.submit(); };
+        applyButton.addEventListener('click', function() { this.form.submit(); });
         applyButton.style.display = 'block';
         applyButton.style.marginTop = '10px';
         applyButton.className = 'btn btn-light';
@@ -245,11 +272,7 @@
 
             const checkFormState = () => {
                 const currentFormState = new URLSearchParams(new FormData(filterForm)).toString();
-                if (currentFormState !== initialFormState) {
-                    refreshButton.classList.add(FORM_CHANGED_BUTTON_STYLE);
-                } else {
-                    refreshButton.classList.remove(FORM_CHANGED_BUTTON_STYLE);
-                }
+                refreshButton.classList.toggle(FORM_CHANGED_BUTTON_STYLE, currentFormState !== initialFormState);
             };
 
             formInputListeners.set(formKey, checkFormState);
@@ -258,7 +281,7 @@
         }
     }
 
-    /// -- END of filter fixes ---
+    // --- END filter fixes ---
 
     /**
      * Adds the product's article number next to the price on list pages.
@@ -284,8 +307,6 @@
                     const artikelnr = match[0];
                     const span = document.createElement('span');
                     span.className = ARTICLE_NUMBER_SPAN_CLASS;
-                    span.style.fontSize = '0.7em';
-                    span.style.marginLeft = '4px';
                     span.textContent = `(${artikelnr})`;
                     priceStrong.appendChild(span);
                 }
@@ -294,112 +315,85 @@
     }
 
     /**
-     * Fixes the stock information icons, by adding them/recoloring them.
+     * Fixes stock status icons sitewide to be visually distinct:
+     *   - "Online op voorraad" / "Op voorraad in ons magazijn": green check (unchanged)
+     *   - "Op voorraad bij leverancier" (stock-status-color-2): yellow check
+     *   - "Onbekende levertijd" / "levertijd onbekend": gray X
+     *
+     * Strategy: find the <i> icon element in each stock block, save its original
+     * classes, then swap them. One approach for all locations on the site.
      */
     function stockInformationIconFix() {
         const isEnabled = currentSettings.enableStockInformationIconFix.value;
         const MODIFIED_CLASS = 'iq-tweaks-stock-icon-modified';
 
-        // --- Helper function to revert changes ---
-        const revertChanges = (el) => {
-            if (el.dataset.originalColor) {
-                el.style.color = el.dataset.originalColor;
-            }
-            if (el.dataset.originalClasses) {
-                el.className = el.dataset.originalClasses;
-            }
-            if (el.dataset.addedByScript) {
-                el.remove();
-            }
-            if (el.dataset.iqTweaksOriginalText) {
-                el.textContent = el.dataset.iqTweaksOriginalText;
-            }
-            el.classList.remove(MODIFIED_CLASS);
-            for (const key in el.dataset) {
-                if (key.startsWith('iqTweaks') || key.startsWith('original') || key === 'addedByScript') {
-                    delete el.dataset[key];
-                }
-            }
-        };
-        // --- Revert all changes first ---
-        document.querySelectorAll(`.${MODIFIED_CLASS}`).forEach(revertChanges);
+        // --- Revert: restore original classes on any icon we previously touched ---
+        document.querySelectorAll(`i.${MODIFIED_CLASS}`).forEach(icon => {
+            icon.className = icon.dataset.iqTweaksOriginalClasses;
+            delete icon.dataset.iqTweaksOriginalClasses;
+        });
 
         if (!isEnabled) return;
 
-        // --- Helper function for applying icon fixes to small elements ---
-        const applySmallElementFix = (small, iconClass, textColor) => {
-            small.dataset.iqTweaksOriginalText = small.innerHTML;
-            small.classList.add(MODIFIED_CLASS);
-
-            const text = small.textContent;
-            const regex = /^(\d+\s*\|\s*)(.*)$/;
-            const match = text.match(regex);
-
-            const iconHtml = `<i class="${iconClass} ps-1 ${textColor} me-1 ${MODIFIED_CLASS}" data-added-by-script="true"></i>`;
-            small.innerHTML = match ? match[1] + iconHtml + match[2] : iconHtml + text;
+        // --- Core helper: swap icon classes, saving originals for revert ---
+        const fixIcon = (icon, newClasses) => {
+            icon.dataset.iqTweaksOriginalClasses = icon.className;
+            icon.className = newClasses + ' ' + MODIFIED_CLASS;
         };
 
-        // --- Apply fixes ---
+        // --- Classify a text block into a stock state ---
+        // Returns 'leverancier', 'onbekend', or null (= leave alone / already correct)
+        const classifyText = (text) => {
+            if (text.includes('werkdagen') || text.includes('weken') ||
+                text.includes('leverancier')) return 'leverancier';
+            if (text.includes('onbekende levertijd') ||
+                text.includes('levertijd onbekend')) return 'onbekend';
+            return null;
+        };
 
-        // 1. Search/Basket Page (.text-muted small elements)
-        document.querySelectorAll('small.text-muted').forEach(small => {
-            const text = small.textContent;
+        // --- Icon class sets ---
+        const ICON_LEVERANCIER = 'fa fa-check fa-lg ps-1 text-warning';
+        const ICON_ONBEKEND    = 'fa fa-times fa-lg ps-1 text-secondary';
 
-            if (text.includes("werkdagen") || text.includes("weken")) {
-                applySmallElementFix(small, 'fa fa-check fa-lg', 'text-warning');
-            } else if (text.includes("Onbekende levertijd")) {
-                applySmallElementFix(small, 'fa fa-times fa-lg', 'text-times');
-            } else if (text.includes("Direct uit voorraad leverbaar")) {
-                applySmallElementFix(small, 'fa fa-check fa-lg', 'text-success');
+        // --- Find every stock <i> on the page ---
+        // The site uses fa-check icons inside stock blocks. We find the icon,
+        // read the surrounding text to classify, then swap if needed.
+        document.querySelectorAll('i.fa-check, i.fa-times').forEach(icon => {
+            // Walk up to find a meaningful text container (max 3 levels)
+            let container = icon.parentElement;
+            for (let depth = 0; depth < 3 && container; depth++) {
+                if (container.textContent.length > 5) break;
+                container = container.parentElement;
             }
-        });
+            if (!container) return;
 
-        // 2. Product Page (.col-lg-8.col-7.border-bottom)
-        document.querySelectorAll('.col-lg-8.col-7.border-bottom').forEach(element => {
-            const text = element.textContent.toLowerCase();
-            const successSpan = element.querySelector('span.text-success');
-            if (!successSpan) return;
+            const text = container.textContent.toLowerCase();
 
-            const applyProductPageFix = (iconClass, color, title) => {
-                successSpan.dataset.originalClasses = successSpan.className;
-                successSpan.className = `text-muted ${MODIFIED_CLASS}`;
+            // Skip icons that are not stock-related
+            if (!text.match(/voorraad|levertijd|werkdagen|weken|leverbaar|magazijn/)) return;
 
-                const iconSpan = document.createElement('span');
-                iconSpan.className = MODIFIED_CLASS;
-                iconSpan.dataset.addedByScript = 'true';
-                iconSpan.style.color = color;
-                iconSpan.setAttribute('title', title);
-                iconSpan.innerHTML = `<i class="${iconClass}" aria-hidden="true"></i>`;
-                successSpan.parentNode.insertBefore(iconSpan, successSpan);
-            };
-
-            if (text.includes("werkdagen") || text.includes("weken")) {
-                console.log("test here");
-                applyProductPageFix('fa fa-check fa-lg', 'rgb(255, 193, 7)', 'Op voorraad bij leverancier');
-            } else if (text.includes("levertijd onbekend")) {
-                applyProductPageFix('fa fa-times fa-lg ps-1 text-times me-1', 'inherit', 'Levertijd onbekend');
-            }
-        });
-
-        // 3. Elsewhere (.card-product-list-stock)
-        document.querySelectorAll('div.card-product-list-stock').forEach(div => {
-            const label = div.querySelector('span[aria-label="Op voorraad bij leverancier"]');
-            if (label) {
-                const elementToColor = div.querySelector('[style*="color:#009400"]');
-                if (elementToColor) {
-                    elementToColor.classList.add(MODIFIED_CLASS);
-                    elementToColor.dataset.originalColor = '#009400';
-                    elementToColor.style.color = '#ffc107';
-                }
-            }
+            const state = classifyText(text);
+            if (state === 'leverancier') fixIcon(icon, ICON_LEVERANCIER);
+            else if (state === 'onbekend') fixIcon(icon, ICON_ONBEKEND);
+            // null = in stock / already green, leave it alone
         });
     }
 
     /**
-     * Adds the content group to the top of a product page (i.e. "Laptops" become "Laptops (095)").
+     * Dispatcher for all content-related features, toggled by the enableContentFeatures setting.
      */
-    function contentGroupAddition() {
-        const isEnabled = currentSettings.enableContentGroupAddition.value;
+    function contentFeatures() {
+        const isEnabled = currentSettings.enableContentFeatures.value;
+        contentGroupAddition(isEnabled);
+        addAITestFeature(isEnabled);
+        toggleAttributeNameDisplay(isEnabled);
+    }
+
+    /**
+     * Adds the content group to the top of a product page (i.e. "Laptops" becomes "Laptops (095)").
+     * @param {boolean} isEnabled
+     */
+    function contentGroupAddition(isEnabled) {
         const SUFFIX_SPAN_CLASS = 'iq-tweaks-article-suffix';
 
         // Remove any spans previously added by this function first.
@@ -421,6 +415,47 @@
     }
 
     /**
+     * Adds a clickable Tweakers favicon link next to the EAN code on a product page.
+     */
+    function eanTweakersSearch() {
+        const isEnabled = currentSettings.enableEanTweakersSearch.value;
+        const LINK_CLASS = 'iq-tweaks-ean-tweakers-link';
+
+        // Remove any previously added links first.
+        document.querySelectorAll(`.${LINK_CLASS}`).forEach(el => el.remove());
+
+        if (!isEnabled) return;
+
+        // Find the <dd> labelled "EAN Code" and get the <dt> sibling that holds the value.
+        const eanDd = Array.from(document.querySelectorAll('dd.col-lg-4.col-5.text-end.border-bottom'))
+        .find(dd => dd.textContent.trim() === 'EAN Code');
+        if (!eanDd) return;
+
+        const eanDt = eanDd.nextElementSibling;
+        if (!eanDt || eanDt.tagName.toLowerCase() !== 'dt') return;
+
+        const eanSpan = eanDt.querySelector('span.no-tel');
+        if (!eanSpan) return;
+
+        const ean = eanSpan.textContent.trim();
+        if (!ean) return;
+
+        const link = document.createElement('a');
+        link.href = `https://tweakers.net/zoeken/?keyword=${encodeURIComponent(ean)}`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.title = `Zoek "${ean}" op Tweakers`;
+        link.className = LINK_CLASS;
+
+        const icon = document.createElement('img');
+        icon.src = 'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/tweakers_favicon.ico';
+        icon.alt = 'Tweakers';
+
+        link.appendChild(icon);
+        eanSpan.after(link);
+    }
+
+    /**
      * Injects all necessary CSS into the page using GM_addStyle.
      * This CSS is used for the Control Panel, the toggle buttons within it and the filter button's animation.
      */
@@ -433,104 +468,154 @@
         const primaryColorDark = '#005691';
 
         GM_addStyle(`
-            /* --- Control Panel Wrapper & Toggle Button --- */
-            #${SCRIPT_PREFIX}panel-wrapper {
-                position: relative; margin-left: auto; display: flex;
-                align-items: flex-end; flex-direction: column;
-            }
-            #${SCRIPT_PREFIX}control-panel-toggle {
-                width: 30px; height: 30px; background-color: ${primaryColor};
-                color: white; border-radius: 5px; display: flex; justify-content: center;
-                align-items: center; cursor: pointer; font-size: 1.2em; z-index: 10000;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out;
-                font-family: sans-serif; margin-top: 10px;
-            }
-            #${SCRIPT_PREFIX}control-panel-toggle.open { transform: rotate(180deg); }
+        /* --- Control Panel Wrapper & Toggle Button --- */
+        #${SCRIPT_PREFIX}panel-wrapper {
+        position: relative; margin-left: auto; display: flex;
+        align-items: flex-end; flex-direction: column;
+        }
+        #${SCRIPT_PREFIX}control-panel-toggle {
+        width: 30px; height: 30px; background-color: ${primaryColor};
+        color: white; border-radius: 5px; display: flex; justify-content: center;
+        align-items: center; cursor: pointer; font-size: 1.2em; z-index: 10000;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out;
+        font-family: sans-serif; margin-top: 10px;
+        }
+        #${SCRIPT_PREFIX}control-panel-toggle.open { transform: rotate(180deg); }
 
-            /* --- Control Panel Box --- */
-            #${SCRIPT_PREFIX}control-panel {
-                position: absolute; bottom: calc(100% + 10px); right: 0;
-                background-color: ${panelBackgroundColor}; border: 1px solid ${panelBorderColor};
-                border-radius: 8px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                z-index: 9999; max-height: 80vh; overflow-y: auto;
-                width: ${panelWidth}px; display: none;
-                transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-                opacity: 0; transform: translateY(10px);
-            }
-            #${SCRIPT_PREFIX}control-panel.show { display: block; opacity: 1; transform: translateY(0); }
-            #${SCRIPT_PREFIX}control-panel h3 {
-                margin-top: 0; margin-bottom: 15px; color: #343a40;
-                font-size: 1.2em; border-bottom: 1px solid ${panelBorderColor}; padding-bottom: 10px;
-            }
+        /* --- Control Panel Box --- */
+        #${SCRIPT_PREFIX}control-panel {
+        position: absolute; bottom: calc(100% + 10px); right: 0;
+        background-color: ${panelBackgroundColor}; border: 1px solid ${panelBorderColor};
+        border-radius: 8px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 9999; max-height: 80vh; overflow-y: auto;
+        width: ${panelWidth}px;
+        visibility: hidden; opacity: 0; pointer-events: none;
+        transform: translateY(10px);
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, visibility 0s linear 0.2s;
+        }
+        #${SCRIPT_PREFIX}control-panel.show {
+        visibility: visible; opacity: 1; pointer-events: auto;
+        transform: translateY(0);
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, visibility 0s linear 0s;
+        }
+        #${SCRIPT_PREFIX}control-panel h3 {
+        margin-top: 0; margin-bottom: 15px; color: #343a40;
+        font-size: 1.2em; border-bottom: 1px solid ${panelBorderColor}; padding-bottom: 10px;
+        }
 
-            /* --- Feature Items & Toggles within Panel --- */
-            .${SCRIPT_PREFIX}feature-item {
-                display: flex; justify-content: space-between; align-items: center;
-                margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dotted #eee;
-            }
-            .${SCRIPT_PREFIX}feature-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-            .${SCRIPT_PREFIX}feature-label-and-qmark {
-                display: flex; align-items: center; flex-grow: 1; margin-right: 10px;
-            }
-            .${SCRIPT_PREFIX}feature-label-and-qmark label {
-                margin-bottom: 0; cursor: pointer; color: #495057; font-size: 0.95em;
-            }
-            .${SCRIPT_PREFIX}q-mark-container {
-                display: inline-flex; align-items: center; justify-content: center;
-                width: 1.1em; height: 1.1em; border: 1px solid ${primaryColor};
-                border-radius: 50%; font-size: 0.8em; color: ${primaryColor};
-                cursor: help; margin-right: 12px; flex-shrink: 0;
-                transition: all 0.2s ease;
-            }
-            .${SCRIPT_PREFIX}q-mark-container:hover { background-color: #e0f2f7; border-color: ${primaryColorDark}; }
+        /* --- Feature Items & Toggles within Panel --- */
+        .${SCRIPT_PREFIX}feature-item {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dotted #eee;
+        }
+        .${SCRIPT_PREFIX}feature-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .${SCRIPT_PREFIX}feature-label-and-qmark {
+            display: flex; align-items: center; flex-grow: 1; margin-right: 10px;
+        }
+        .${SCRIPT_PREFIX}feature-label-and-qmark label {
+            margin-bottom: 0; cursor: pointer; color: #495057; font-size: 0.95em;
+        }
+        .${SCRIPT_PREFIX}q-mark-container {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 1.1em; height: 1.1em; border: 1px solid ${primaryColor};
+            border-radius: 50%; font-size: 0.8em; color: ${primaryColor};
+            cursor: help; margin-right: 12px; flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .${SCRIPT_PREFIX}q-mark-container:hover { background-color: #e0f2f7; border-color: ${primaryColorDark}; }
 
-            /* --- Global Tooltip for Help Icons --- */
-            #${SCRIPT_PREFIX}global-tooltip {
-                width: 220px; background-color: rgba(0, 0, 0, 0.85); color: #fff;
-                text-align: center; border-radius: 6px; padding: 8px 12px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 0.8em; line-height: 1.4;
-                position: fixed; z-index: 2147483647; visibility: hidden; opacity: 0;
-                transition: opacity 0.2s ease-in-out; pointer-events: none;
-            }
-            #${SCRIPT_PREFIX}global-tooltip::after {
-                content: ""; position: absolute; top: 100%; left: 50%;
-                margin-left: -5px; border-width: 5px; border-style: solid;
-                border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
-            }
-            #${SCRIPT_PREFIX}global-tooltip.tooltip-bottom-arrow::after {
-                top: -10px; border-color: transparent transparent rgba(0, 0, 0, 0.85) transparent;
-            }
+        /* --- Global Tooltip for Help Icons --- */
+        #${SCRIPT_PREFIX}global-tooltip {
+        width: 220px; background-color: rgba(0, 0, 0, 0.85); color: #fff;
+        text-align: center; border-radius: 6px; padding: 8px 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 0.8em; line-height: 1.4;
+        position: fixed; z-index: 2147483647; visibility: hidden; opacity: 0;
+        transition: opacity 0.2s ease-in-out; pointer-events: none;
+        }
+        #${SCRIPT_PREFIX}global-tooltip::after {
+        content: ""; position: absolute; top: 100%; left: 50%;
+        margin-left: -5px; border-width: 5px; border-style: solid;
+        border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+        }
+        #${SCRIPT_PREFIX}global-tooltip.tooltip-bottom-arrow::after {
+        top: -10px; border-color: transparent transparent rgba(0, 0, 0, 0.85) transparent;
+        }
 
-            /* --- Slider Switch CSS --- */
-            .switch {
-                position: relative; display: inline-block;
-                width: ${sliderSize * 2}px; height: ${sliderSize}px; flex-shrink: 0;
-            }
-            .switch input { opacity: 0; width: 0; height: 0; }
-            .slider {
-                position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-                background-color: #ccc; transition: .4s; border-radius: ${sliderSize}px;
-            }
-            .slider:before {
-                position: absolute; content: ""; height: ${sliderSize * 0.8}px; width: ${sliderSize * 0.8}px;
-                left: ${sliderSize / 10}px; bottom: ${sliderSize * 0.1}px;
-                background-color: white; transition: .4s; border-radius: 50%;
-            }
-            input:checked + .slider { background-color: #2196F3; }
-            input:checked + .slider:before { transform: translateX(${sliderSize}px); }
+        /* --- Slider Switch CSS --- */
+        .${SCRIPT_PREFIX}switch {
+            position: relative; display: inline-block;
+            width: ${sliderSize * 2}px; height: ${sliderSize}px; flex-shrink: 0;
+        }
+        .${SCRIPT_PREFIX}switch input { opacity: 0; width: 0; height: 0; }
+        .${SCRIPT_PREFIX}slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: ${sliderSize}px;
+        }
+        .${SCRIPT_PREFIX}slider:before {
+            position: absolute; content: ""; height: ${sliderSize * 0.8}px; width: ${sliderSize * 0.8}px;
+            left: ${sliderSize / 10}px; bottom: ${sliderSize * 0.1}px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        .${SCRIPT_PREFIX}switch input:checked + .${SCRIPT_PREFIX}slider { background-color: #2196F3; }
+        .${SCRIPT_PREFIX}switch input:checked + .${SCRIPT_PREFIX}slider:before { transform: translateX(${sliderSize}px); }
 
-            /* --- Filter Button Animation --- */
-            .needs-refresh {
-                background-color: ${primaryColor} !important; color: #ffffff !important;
-                border-color: ${primaryColorDark} !important;
-                box-shadow: 0 0 10px rgba(0, 107, 182, 0.7);
-                animation: pulse-animation 5.0s infinite;
-            }
-            @keyframes pulse-animation {
-                0% { box-shadow: 0 0 0 0 rgba(0, 107, 182, 0.7); }
-                70% { box-shadow: 0 0 0 10px rgba(0, 107, 182, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(0, 107, 182, 0); }
-            }
+        /* --- Filter Button Animation --- */
+        .needs-refresh {
+            background-color: ${primaryColor} !important; color: #ffffff !important;
+            border-color: ${primaryColorDark} !important;
+            box-shadow: 0 0 10px rgba(0, 107, 182, 0.7);
+            animation: pulse-animation 5.0s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(0, 107, 182, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 107, 182, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 107, 182, 0); }
+        }
+        /* --- Bug Report Section --- */
+        #${SCRIPT_PREFIX}bug-report-text {
+        font-size: 0.85em; margin-top: 15px; margin-bottom: 10px;
+        }
+        #${SCRIPT_PREFIX}copy-bug-info-button {
+        display: block; width: 100%; padding: 8px 12px; margin-bottom: 10px;
+        }
+        /* --- Article Number Addition --- */
+        .iq-tweaks-artikelnummer {
+            font-size: 0.7em; margin-left: 4px;
+        }
+        /* --- EAN Tweakers Search --- */
+        .iq-tweaks-ean-tweakers-link {
+            display: inline-flex; align-items: center;
+            margin-left: 6px; vertical-align: middle;
+            opacity: 0.8; transition: opacity 0.2s ease;
+        }
+        .iq-tweaks-ean-tweakers-link:hover { opacity: 1; }
+        .iq-tweaks-ean-tweakers-link img {
+            width: 14px; height: 14px; display: block;
+        }
+        /* --- Easter Eggs --- */
+        .iq-tweaks-confetti-emoji {
+            position: fixed; font-size: 1.6em; pointer-events: none;
+            animation: iq-tweaks-confetti-fall 1.2s ease-in forwards;
+            z-index: 2147483647;
+        }
+        @keyframes iq-tweaks-confetti-fall {
+            0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(120px) rotate(360deg); }
+        }
+        #iq-tweaks-konami-msg {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.88); color: #fff; padding: 20px 30px;
+        border-radius: 10px; font-size: 1.1em; text-align: center;
+        z-index: 2147483647; pointer-events: none;
+        animation: iq-tweaks-konami-pop 3s ease forwards;
+        }
+        @keyframes iq-tweaks-konami-pop {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+            20%  { transform: translate(-50%, -50%) scale(1); }
+            75%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
         `);
     }
 
@@ -554,7 +639,7 @@
 
         const panel = document.createElement('div');
         panel.id = SCRIPT_PREFIX + 'control-panel';
-        panel.innerHTML = `<h3>IQ🟣Tweaks Instellingen</h3>`; // Using &#x1F7E3; for the purple circle emoji
+        panel.innerHTML = `<h3>IQ🟣Tweaks Instellingen</h3>`;
 
         panelWrapper.append(toggleBtn, panel);
         targetFooterSection.appendChild(panelWrapper);
@@ -588,7 +673,7 @@
 
             // Right side: Toggle switch
             const switchLabel = document.createElement('label');
-            switchLabel.className = 'switch';
+            switchLabel.className = `${SCRIPT_PREFIX}switch`;
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -601,27 +686,20 @@
             });
 
             const sliderSpan = document.createElement('span');
-            sliderSpan.className = 'slider round';
+            sliderSpan.className = `${SCRIPT_PREFIX}slider round`;
 
             switchLabel.append(checkbox, sliderSpan);
             itemDiv.append(labelContainer, switchLabel);
             panel.appendChild(itemDiv);
         }
 
-        // --- Add the smaller text and copy bug info button ---
         const bugReportText = document.createElement('p');
-        bugReportText.style.fontSize = '0.85em';
-        bugReportText.style.marginTop = '15px';
-        bugReportText.style.marginBottom = '10px';
-        bugReportText.innerHTML = `IQ🟣Tweaks ${VERSION_NUMBER} - Heb je een bug gevonden? Druk op deze knop om belangrijk info te kopiëren en stuur een email.`;
+        bugReportText.id = SCRIPT_PREFIX + 'bug-report-text';
+        bugReportText.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} - Heb je een bug gevonden? Druk op deze knop om belangrijke info te kopiëren en stuur een email.`;
 
         const copyBugInfoButton = document.createElement('button');
         copyBugInfoButton.textContent = 'Kopieer info';
-        copyBugInfoButton.style.display = 'block';
-        copyBugInfoButton.style.width = '100%';
-        copyBugInfoButton.style.padding = '8px 12px';
-        copyBugInfoButton.style.marginBottom = '10px'; // Add some space below the button
-        copyBugInfoButton.className = 'btn btn-primary'; // Using a primary button style for prominence
+        copyBugInfoButton.className = 'btn btn-primary';
         copyBugInfoButton.id = SCRIPT_PREFIX + 'copy-bug-info-button';
 
         panel.appendChild(document.createElement('hr')); // Optional separator for visual distinction
@@ -631,62 +709,43 @@
         // Add event listener for the bug info copy button
         copyBugInfoButton.addEventListener('click', () => {
             const websiteLink = window.location.href;
-            const scriptVersion = VERSION_NUMBER;
             const userAgent = navigator.userAgent;
 
+            // Data-driven browser detection: each entry is [guard, regex, label].
+            // The first matching entry wins.
+            const browserRules = [
+                [ua => ua.includes("Chrome") && !ua.includes("Chromium"), /(Chrome)\/([\d.]+)/,     (m) => `${m[1]} ${m[2]}`],
+                                           [ua => ua.includes("Firefox"),                             /(Firefox)\/([\d.]+)/,    (m) => `${m[1]} ${m[2]}`],
+                                           [ua => ua.includes("Safari") && !ua.includes("Chrome"),   /Version\/([\d.]+).*Safari/, (m) => `Safari ${m[1]}`],
+                                           [ua => ua.includes("Edg"),                                 /Edg\/([\d.]+)/,           (m) => `Edge ${m[1]}`],
+                                           [ua => ua.includes("Opera") || ua.includes("OPR"),        /(Opera|OPR)\/([\d.]+)/,   (m) => `Opera ${m[2]}`],
+                                           [ua => ua.includes("MSIE"),                                /MSIE ([\d.]+)/,            (m) => `Internet Explorer ${m[1]}`],
+                                           [ua => ua.includes("Trident"),                             /rv:([\d.]+).*Trident/,     (m) => `Internet Explorer 11 (Trident/${m[1]})`],
+            ];
+
             let browserInfo = "Onbekende browser";
-            // Basic browser detection logic
-            // This prioritizes common browsers and tries to extract version numbers.
-            if (userAgent.includes("Chrome") && !userAgent.includes("Chromium")) {
-                const match = userAgent.match(/(Chrome)\/(\d+\.\d+\.\d+\.\d+)/);
-                if (match) browserInfo = `${match[1]} ${match[2]}`;
-            } else if (userAgent.includes("Firefox")) {
-                const match = userAgent.match(/(Firefox)\/(\d+\.\d+)/);
-                if (match) browserInfo = `${match[1]} ${match[2]}`;
-            } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
-                 const match = userAgent.match(/Version\/(\d+\.\d+\.\d+).*Safari/);
-                 if (match) browserInfo = `Safari ${match[1]}`;
-            } else if (userAgent.includes("Edg")) { // New Edge (Chromium-based)
-                const match = userAgent.match(/(Edge?)\/(\d+\.\d+)/);
-                if (match) browserInfo = `Edge ${match[2]}`;
-            } else if (userAgent.includes("Opera") || userAgent.includes("OPR")) {
-                const match = userAgent.match(/(Opera|OPR)\/(\d+\.\d+)/);
-                if (match) browserInfo = `Opera ${match[2]}`;
-            } else if (userAgent.includes("MSIE") || userAgent.includes("Trident")) { // Older IE and IE11
-                if (userAgent.includes("MSIE")) {
-                    const match = userAgent.match(/MSIE (\d+\.\d+)/);
-                    if (match) browserInfo = `Internet Explorer ${match[1]}`;
-                } else { // IE 11
-                    const match = userAgent.match(/rv:(\d+\.\d+).*Trident/);
-                    if (match) browserInfo = `Internet Explorer 11 (Trident/${match[1]})`;
+            for (const [guard, regex, format] of browserRules) {
+                if (guard(userAgent)) {
+                    const match = userAgent.match(regex);
+                    if (match) { browserInfo = format(match); }
+                    break;
                 }
             }
 
 
             const bugInfoToCopy = `
-- Website link: ${websiteLink}
-- IQ🟣Tweaks versie: ${scriptVersion}
-- Gebruikte webbrowser: ${browserInfo}
-            `.trim(); // .trim() to remove leading/trailing whitespace
+            - Website link: ${websiteLink}
+            - IQ🟣Tweaks versie: ${VERSION_NUMBER}
+            - Gebruikte webbrowser: ${browserInfo}
+            `.trim();
 
-            // Copy to clipboard logic using a temporary textarea
-            const textarea = document.createElement('textarea');
-            textarea.value = bugInfoToCopy;
-            textarea.style.position = 'fixed'; // Prevents scrolling to bottom of page in some browsers
-            textarea.style.left = '-9999px'; // Move out of view
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            try {
-                document.execCommand('copy');
-                console.log('Bug info copied:', bugInfoToCopy);
-                showTemporaryMessage('Bug info copied to clipboard!');
-            } catch (err) {
+            // Copy to clipboard using the modern Clipboard API.
+            navigator.clipboard.writeText(bugInfoToCopy).then(() => {
+                showTemporaryMessage('Bug info gekopieerd!');
+            }).catch(err => {
                 console.error('Failed to copy bug info: ', err);
-                showTemporaryMessage('Failed to copy bug info.');
-            } finally {
-                document.body.removeChild(textarea);
-            }
+                showTemporaryMessage('Kopiëren mislukt.');
+            });
         });
 
         toggleBtn.addEventListener('click', () => {
@@ -700,7 +759,7 @@
      */
     function updateControlPanelState() {
         const panel = document.getElementById(SCRIPT_PREFIX + 'control-panel');
-        if (!panel || !panel.classList.contains('show')) return;
+        if (!panel) return;
 
         for (const featureKey in currentSettings) {
             const checkbox = document.getElementById(SCRIPT_PREFIX + featureKey);
@@ -708,6 +767,39 @@
                 checkbox.checked = currentSettings[featureKey].value;
             }
         }
+    }
+
+    // --- Clipboard / Notification Helper ---
+
+    /**
+     * Briefly shows a small notification message on screen, then fades it out.
+     * @param {string} message - The text to display.
+     */
+    function showTemporaryMessage(message) {
+        const TOAST_ID = SCRIPT_PREFIX + 'toast';
+
+        // Reuse an existing toast element if one is already in the DOM.
+        let toast = document.getElementById(TOAST_ID);
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = TOAST_ID;
+            toast.style.cssText = `
+            position: fixed; bottom: 20px; right: 20px; z-index: 2147483647;
+            background-color: rgba(0,0,0,0.8); color: #fff;
+            padding: 10px 16px; border-radius: 6px; font-size: 0.9em;
+            opacity: 0; transition: opacity 0.3s ease-in-out;
+            pointer-events: none; font-family: sans-serif;
+            `;
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.style.opacity = '1';
+
+        clearTimeout(toast._hideTimeout);
+        toast._hideTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 2500);
     }
 
     // --- Tooltip Helper Functions ---
@@ -762,27 +854,112 @@
      */
     function addCredits() {
         const footerDiv = document.querySelector('.footer-bottom');
-        if (footerDiv) {
-            const p = document.createElement('p');
-            p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} created by mini of Hop On LLC - Original idea by 🎸`;
-            p.className = 'text-muted mb-0';
-            footerDiv.appendChild(p);
+        if (!footerDiv) return;
+
+        if (footerDiv.querySelector('.iq-tweaks-credits')) return; // already added
+
+        const p = document.createElement('p');
+        p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} created by mini of Hop On LLC - Original idea by 🎸`;
+        p.className = 'text-muted mb-0 iq-tweaks-credits';
+        footerDiv.appendChild(p);
+    }
+
+    /**
+     * Placeholder for future experimental features.
+     * Previously toggled addAITestFeature and toggleAttributeNameDisplay,
+     * which have since been moved to contentFeatures().
+     */
+    function experimentalFeatures() {
+        // No experimental features currently active.
+    }
+
+    // --- Easter Egg helpers ---
+
+    /** Spawns emoji particles bursting outward from a point on screen. */
+    function spawnConfetti(x, y, emojis, count = 10) {
+        for (let i = 0; i < count; i++) {
+            const el = document.createElement('span');
+            el.className = 'iq-tweaks-confetti-emoji';
+            el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = `${x + (Math.random() - 0.5) * 120}px`;
+            el.style.top  = `${y + (Math.random() - 0.5) * 40}px`;
+            document.body.appendChild(el);
+            el.addEventListener('animationend', () => el.remove());
         }
     }
 
     /**
-     * Experimental features (not ready for full use) will be added here.
+     * Toggles all fun/easter-egg features.
      */
-    function experimentalFeatures() {
-        const isEnabled = currentSettings.enableExperimentalFeatures.value;
-        if (isEnabled) {
-            console.log("IQ🟣Tweaks: Experimental features enabled.");
-            addAITestFeature(isEnabled);
-            toggleAttributeNameDisplay(isEnabled);
-        } else {
-            console.log("IQ🟣Tweaks: Experimental features disabled.");
-            addAITestFeature(isEnabled);
-            toggleAttributeNameDisplay(isEnabled);
+    function funFeatures() {
+        const isEnabled = currentSettings.enableFunFeatures.value;
+
+        // Use a single attribute on <body> to namespace all fun-feature listeners,
+        // so we can cleanly remove them when the feature is toggled off.
+        const ACTIVE_ATTR = 'data-iq-tweaks-fun-active';
+
+        if (!isEnabled) {
+            document.body.removeAttribute(ACTIVE_ATTR);
+            // Disconnect basket observer if one was stored from a previous activation.
+            document.body._iqTweaksBasketObserver?.disconnect();
+            delete document.body._iqTweaksBasketObserver;
+            return;
+        }
+
+        // Guard against double-registering if applyAllFeatures is called again.
+        if (document.body.hasAttribute(ACTIVE_ATTR)) return;
+        document.body.setAttribute(ACTIVE_ATTR, '1');
+
+        // --- 1. Nerd confetti on "Specificaties" tab click ---
+        document.querySelectorAll('a[data-bs-target="#tab_specs"]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                if (!currentSettings.enableFunFeatures.value) return;
+                spawnConfetti(e.clientX, e.clientY, ['🤓', '📋', '🔧', '💻', '📐'], 12);
+            });
+        });
+
+        // --- 2. Konami code easter egg ---
+        const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+        let konamiProgress = 0;
+        document.addEventListener('keydown', (e) => {
+            if (!currentSettings.enableFunFeatures.value) return;
+            // Don't intercept keypresses while the user is typing in a field.
+            if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+            if (e.key === KONAMI[konamiProgress]) {
+                konamiProgress++;
+                if (konamiProgress === KONAMI.length) {
+                    konamiProgress = 0;
+                    const msg = document.createElement('div');
+                    msg.id = 'iq-tweaks-konami-msg';
+                    msg.innerHTML = '🎮 Cheats ingeschakeld!<br><small style="opacity:0.7">...maar er zijn geen cheats.</small>';
+                    document.body.appendChild(msg);
+                    msg.addEventListener('animationend', () => msg.remove());
+                }
+            } else {
+                konamiProgress = e.key === KONAMI[0] ? 1 : 0;
+            }
+        });
+
+        // --- 3. Basket count 69 = nice ---
+        // Instead of a toast, replaces the basket count number with "nice" when it hits 69.
+        const basketCountEl = document.querySelector('.basket_count');
+        if (basketCountEl) {
+            const checkBasket69 = (count) => {
+                if (count === '69') {
+                    basketCountEl.dataset.iqTweaksOriginal69 = count;
+                    basketCountEl.textContent = 'nice';
+                } else if (basketCountEl.dataset.iqTweaksOriginal69 && count !== 'nice') {
+                    // Count changed away from 69, restore normal behavior
+                    delete basketCountEl.dataset.iqTweaksOriginal69;
+                }
+            };
+            checkBasket69(basketCountEl.textContent.trim());
+            const basketObserver = new MutationObserver(() => {
+                if (!currentSettings.enableFunFeatures.value) return;
+                checkBasket69(basketCountEl.textContent.trim());
+            });
+            basketObserver.observe(basketCountEl, { childList: true, characterData: true, subtree: true });
+            document.body._iqTweaksBasketObserver = basketObserver;
         }
     }
 
@@ -796,27 +973,18 @@
     function addAITestFeature(enable) {
         // --- Common check for existing feature elements ---
         const existingAITestDd = Array.from(document.querySelectorAll('dd.col-lg-4.col-5.text-end.border-bottom'))
-            .find(dd => dd.textContent.trim() === 'Content AI test');
+        .find(dd => dd.querySelector('#iq-tweaks-ai-test-copy-button'));
         const existingAITestDt = existingAITestDd ? existingAITestDd.nextElementSibling : null;
 
         if (!enable) {
-            console.log("AI Test Info feature disabled by external call. Attempting to remove existing elements.");
-            // If the feature is present, remove it
             if (existingAITestDd && existingAITestDt && existingAITestDt.tagName.toLowerCase() === 'dt') {
                 existingAITestDd.remove();
                 existingAITestDt.remove();
-                console.log("AI Test Info feature removed successfully.");
-            } else {
-                console.log("AI Test Info feature not found on page, no removal needed.");
             }
-            return; // Exit after handling removal
+            return;
         }
 
-        // --- If 'enable' is true, proceed with adding the feature (if not already present) ---
-        if (existingAITestDd) {
-            console.log("AI Test Info feature already present. Skipping addition.");
-            return; // Exit if the feature is already on the page
-        }
+        if (existingAITestDd) return;
 
         let AITestInfoParts = []; // Use an array to manage parts for easier joining
         let lastDtElement = null; // To keep track of the last <dt> element found for insertion
@@ -825,7 +993,7 @@
         // Iterates through all potential elements and extracts the text from the following <dt>.
         const extractInfo = (label) => {
             const ddElement = Array.from(document.querySelectorAll('dd.col-lg-4.col-5.text-end.border-bottom'))
-                .find(dd => dd.textContent.trim() === label);
+            .find(dd => dd.textContent.trim() === label);
 
             if (ddElement) {
                 const dtElement = ddElement.nextElementSibling;
@@ -837,10 +1005,11 @@
             return null;
         };
 
-        // --- Extracting Artikelnummer ---
+        // --- Extracting Artikelnummer (6 digits only, ignoring any trailing location code) ---
         const artikelnummerDT = extractInfo('Artikelnummer');
         if (artikelnummerDT) {
-            AITestInfoParts.push(artikelnummerDT.textContent.trim());
+            const match = artikelnummerDT.textContent.match(/\d{6}/);
+            if (match) AITestInfoParts.push(match[0]);
             lastDtElement = artikelnummerDT;
         }
 
@@ -885,62 +1054,38 @@
         // --- Insert new elements if information was found and a lastDtElement exists ---
         // Ensure AITestInfo is not empty to avoid adding an empty field.
         if (AITestInfo.trim() !== '' && lastDtElement) {
-            // Create the <dd> element: <dd class="col-lg-4 col-5 text-end border-bottom">Content AI test</dd>
+            // The <dd> becomes the copy button itself, sitting naturally in the right-aligned label column.
             const newDd = document.createElement('dd');
             newDd.className = 'col-lg-4 col-5 text-end border-bottom';
-            newDd.textContent = 'Content AI test';
 
-            // Create the <dt> element: <dt class="col-lg-8 col-7 border-bottom"><span class="no-tel">TEXTHERE</span></dt>
+            const copyButton = document.createElement('button');
+            copyButton.className = 'btn btn-light btn-sm';
+            copyButton.id = 'iq-tweaks-ai-test-copy-button';
+            copyButton.textContent = 'Copy info';
+            newDd.appendChild(copyButton);
+
+            // The <dt> holds only the info text span, with no button to push it onto a second line.
             const newDt = document.createElement('dt');
             newDt.className = 'col-lg-8 col-7 border-bottom';
 
-            // Create the "Copy" button
-            const copyButton = document.createElement('button');
-            copyButton.style.cssText = "display: block;";
-            copyButton.className = 'btn btn-light'; // Use provided class
-            copyButton.id = 'iq-tweaks-apply-button'; // Use provided ID
-            copyButton.textContent = 'Copy';
-
-            // Create the <span> element to hold the AITestInfo text
             const spanElement = document.createElement('span');
             spanElement.className = 'no-tel';
             spanElement.textContent = AITestInfo;
-
-            // Append button and text to the new <dt>
-            newDt.appendChild(copyButton);
             newDt.appendChild(spanElement);
 
-            // Insert the new <dd> and <dt> elements right after the last found <dt>.
-            // The .after() method inserts nodes or strings after the current node.
             lastDtElement.after(newDd);
-            newDd.after(newDt); // Insert newDt after the newDd
+            newDd.after(newDt);
 
-            // --- Add event listener for the copy button ---
             copyButton.addEventListener('click', () => {
-                const textToCopy = spanElement.textContent; // Get the content from the span
-
-                // Create a temporary textarea to copy the text to clipboard
-                const textarea = document.createElement('textarea');
-                textarea.value = textToCopy;
-                textarea.style.position = 'fixed'; // Prevents scrolling to bottom of page in some browsers
-                textarea.style.left = '-9999px'; // Move out of view
-                document.body.appendChild(textarea);
-                textarea.select();
-
-                try {
-                    document.execCommand('copy');
-                    console.log('Text copied:', textToCopy);
-                    showTemporaryMessage('Copied to clipboard!');
-                } catch (err) {
+                navigator.clipboard.writeText(spanElement.textContent).then(() => {
+                    showTemporaryMessage('Gekopieerd naar klembord!');
+                }).catch(err => {
                     console.error('Failed to copy text: ', err);
-                    showTemporaryMessage('Failed to copy text.');
-                } finally {
-                    document.body.removeChild(textarea);
-                }
+                    showTemporaryMessage('Kopiëren mislukt.');
+                });
             });
-        } else {
-            console.log("Could not find all required product info elements or AITestInfo is empty. Feature not added.");
         }
+        // else: no usable product info found on this page — feature silently skipped.
     }
 
     /**
@@ -949,59 +1094,29 @@
      * If false, any previously added attribute names are removed.
      */
     function toggleAttributeNameDisplay(enable) {
-        // Select all <article> elements that have the class "filter-group"
         const filterArticles = document.querySelectorAll('article.filter-group');
+        if (filterArticles.length === 0) return;
 
-        // If no articles with the specified class are found, log a message and exit the function early.
-        if (filterArticles.length === 0) {
-            console.log('No <article class="filter-group"> elements found. Script will not proceed.');
-            return;
-        }
-
-        // Iterate over each found article element.
         filterArticles.forEach(article => {
-            // Find the first checkbox input within the current article.
             const checkbox = article.querySelector('input.form-check-input[type="checkbox"]');
-
-            // Find the target element for appending: prioritize <h6>, then <p class="h6">.
             const targetElement = article.querySelector('h6') || article.querySelector('p.h6');
+            if (!checkbox || !targetElement) return;
 
-            // If either the checkbox or the target element is not found, skip to the next article.
-            if (!checkbox || !targetElement) {
-                return; // Acts like 'continue' for Array.prototype.forEach
+            const existingSpan = targetElement.querySelector('.iq-tweaks-attribute-name');
+
+            if (!enable) {
+                existingSpan?.remove();
+                return;
             }
 
-            // Get the attribute name and remove the leading "at" (case-insensitive) if present.
-            const attributeName = checkbox.name.replace(/^at/i, '');
+            if (existingSpan) return;
 
-            // Check for an existing span that was previously added by this script.
-            const existingSpan = targetElement.querySelector('.tampermonkey-added-attribute-name');
+            const span = document.createElement('span');
+            span.classList.add('iq-tweaks-attribute-name');
+            span.textContent = ` (${checkbox.name.replace(/^at/i, '')})`;
 
-            if (enable) {
-                // If enabling the display:
-                // Only add if the span does not already exist within the target element.
-                if (!existingSpan) {
-                    const span = document.createElement('span');
-                    span.classList.add('tampermonkey-added-attribute-name');
-                    span.textContent = ` (${attributeName})`;
-
-                    // Find the first <i> tag within the target element.
-                    const firstITag = targetElement.querySelector('i');
-
-                    // If an <i> tag is found, insert the new span before it; otherwise, append to the end.
-                    if (firstITag) {
-                        targetElement.insertBefore(span, firstITag);
-                    } else {
-                        targetElement.appendChild(span);
-                    }
-                }
-            } else {
-                // If disabling the display:
-                // Only remove if the span currently exists within the target element.
-                if (existingSpan) {
-                    existingSpan.remove();
-                }
-            }
+            const firstITag = targetElement.querySelector('i');
+            firstITag ? targetElement.insertBefore(span, firstITag) : targetElement.appendChild(span);
         });
     }
 })();

@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="486.60001mm"
+   height="61.400002mm"
+   viewBox="0 0 486.60001 61.400002"
+   version="1.1"
+   id="svg189"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="informatique-logo-white-less.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <defs
+     id="defs183" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.90022034"
+     inkscape:cx="688.72028"
+     inkscape:cy="3.3325175"
+     inkscape:document-units="mm"
+     inkscape:current-layer="svg189"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="3339"
+     inkscape:window-height="1805"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <metadata
+     id="metadata186">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Laag 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline">
+    <path
+       class="cls-1"
+       d="M 1.5507805,45.36426 V 2.1626392 H 13.395586 V 45.36426 Z"
+       id="path8"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="M 22.874772,45.36426 V 2.1626392 H 34.199485 L 53.703122,31.992729 V 2.1626392 H 65.027804 V 45.36426 H 53.703122 L 34.266573,15.475448 c 0.05041,0.06713 0,29.863644 0,29.863644 z"
+       id="path10"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px"
+       sodipodi:nodetypes="ccccccccccc" />
+    <path
+       class="cls-1"
+       d="M 74.372782,45.36426 V 2.1626392 H 100.79709 V 11.599885 H 85.789757 v 7.549799 h 14.143306 v 9.227532 H 85.789757 V 45.36426 Z"
+       id="path12"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="m 151.48139,23.864111 a 21.953135,21.953135 0 0 1 -6.71092,16.013962 23.546982,23.546982 0 0 1 -7.54979,4.907368 23.48826,23.48826 0 0 1 -17.67491,0 22.557119,22.557119 0 0 1 -7.44078,-4.907368 21.886026,21.886026 0 0 1 -5.03319,-7.314916 22.859111,22.859111 0 0 1 0,-17.414868 21.92797,21.92797 0 0 1 5.03319,-7.298136 22.557119,22.557119 0 0 1 7.44078,-4.9073696 23.605703,23.605703 0 0 1 17.71685,0 22.842334,22.842334 0 0 1 7.49945,4.9073696 22.104131,22.104131 0 0 1 6.71932,16.013958 z m -23.01848,12.69205 a 10.334835,10.334835 0 0 0 8.07826,-3.598737 14.411726,14.411726 0 0 0 -0.0419,-18.14468 10.771045,10.771045 0 0 0 -16.1146,0 14.62983,14.62983 0 0 0 -0.0419,18.195011 10.334835,10.334835 0 0 0 8.1202,3.548406 z"
+       id="path14"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="M 158.93052,45.36426 V 2.1626392 h 12.27263 q 7.22263,0 10.0664,0.6627018 a 12.834657,12.834657 0 0 1 4.90737,2.2313855 11.668633,11.668633 0 0 1 3.58194,4.5214898 14.420114,14.420114 0 0 1 1.24992,6.0566167 12.859822,12.859822 0 0 1 -2.46629,8.170558 11.995791,11.995791 0 0 1 -7.18068,4.194332 l 11.74414,17.381311 H 179.83508 L 169.93647,28.47788 v 16.88638 z m 11.00595,-22.750059 h 2.17266 q 3.78329,0 5.51975,-1.308632 a 4.7815388,4.7815388 0 0 0 1.74483,-4.093669 q 0,-3.26319 -1.62739,-4.647318 -1.62741,-1.384131 -5.46944,-1.384131 h -2.34041 v 11.425361 z"
+       id="path16"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="m 251.67561,45.36426 h -11.00594 l -2.5166,-18.681557 q -0.26854,-1.979723 -0.48655,-4.395658 -0.21813,-2.415936 -0.39426,-5.284859 a 53.007972,53.007972 0 0 1 -1.61902,6.845151 q -0.26854,0.838865 -0.38586,1.266685 l -5.87208,20.241849 h -7.84339 l -5.87205,-20.241849 -0.36911,-1.249911 a 47.513396,47.513396 0 0 1 -1.61903,-6.819982 q -0.17627,2.449489 -0.41103,4.857036 -0.23493,2.407546 -0.56204,4.789927 l -2.51659,18.681557 h -10.90529 l 6.6606,-43.2016238 h 11.65188 l 6.51798,22.2802958 q 0.0586,0.234871 0.23494,0.763365 a 28.739565,28.739565 0 0 1 1.14924,5.108698 20.820665,20.820665 0 0 1 0.44461,-2.516598 q 0.32716,-1.400908 0.8808,-3.355465 l 6.5767,-22.2215746 h 11.67703 z"
+       id="path18"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="M 257.43024,45.36426 272.36205,2.1626392 h 14.75566 L 302.02436,45.36426 h -11.72735 l -2.18104,-7.759516 h -16.70184 l -2.23979,7.759516 z m 16.51725,-16.148179 h 11.69383 L 281.25403,14.95535 q -0.20958,-0.645926 -0.56204,-2.097165 l -0.91435,-3.7161784 q -0.38589,1.5938454 -0.755,3.0366954 -0.36908,1.442852 -0.74659,2.768259 z"
+       id="path20"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="M 310.76536,45.36426 V 12.329697 h -9.64698 V 2.1626392 h 31.03805 V 12.338086 h -9.64697 v 33.034563 h -11.7441 z"
+       id="path22"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="M 339.12742,45.36426 V 2.1626392 H 350.9722 V 45.36426 Z"
+       id="path24"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="m 404.7687,23.864111 a 21.953135,21.953135 0 0 1 -6.71091,16.013962 23.538593,23.538593 0 0 1 -7.5498,4.907368 23.48826,23.48826 0 0 1 -17.67491,0 22.565508,22.565508 0 0 1 -7.44076,-4.907368 21.894414,21.894414 0 0 1 -5.0332,-7.314916 22.8675,22.8675 0 0 1 0,-17.414868 21.936358,21.936358 0 0 1 5.0332,-7.298136 22.565508,22.565508 0 0 1 7.44076,-4.9073696 23.605703,23.605703 0 0 1 17.71686,0 22.833945,22.833945 0 0 1 7.49944,4.9073696 22.104131,22.104131 0 0 1 6.71932,16.013958 z m -23.01848,12.69205 a 10.334835,10.334835 0 0 0 8.07827,-3.598737 14.411726,14.411726 0 0 0 -0.0419,-18.14468 10.771045,10.771045 0 0 0 -16.11464,0 14.62983,14.62983 0 0 0 -0.0419,18.195011 10.326446,10.326446 0 0 0 8.12025,3.548406 z"
+       id="path26"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <path
+       class="cls-1"
+       d="M 423.64322,2.1626392 V 23.134299 c -0.0351,2.217166 0.0433,4.434675 0.23493,6.643823 0.11037,1.148923 0.37562,2.277641 0.78854,3.355465 0.44672,1.096488 1.2792,1.991627 2.34045,2.516599 1.27159,0.603816 2.67019,0.891596 4.07687,0.838865 1.40137,0.05369 2.79478,-0.234201 4.06013,-0.838865 1.05754,-0.535155 1.89231,-1.426354 2.35723,-2.516599 0.41134,-1.078305 0.67653,-2.20681 0.78849,-3.355465 0.19076,-2.209201 0.26917,-4.426666 0.23495,-6.643823 V 2.1626392 h 11.7441 V 24.971416 c 0,4.747983 -0.27962,8.248851 -0.83885,10.502606 -0.50284,2.123524 -1.49054,4.101782 -2.88571,5.77979 -1.61736,1.852569 -3.71683,3.220278 -6.06499,3.951062 -6.1268,1.7518 -12.62187,1.7518 -18.74867,0 -2.34957,-0.737894 -4.45267,-2.10418 -6.08178,-3.951062 -1.37891,-1.686259 -2.35957,-3.661913 -2.86894,-5.77979 -0.55923,-2.236976 -0.83885,-5.737845 -0.83885,-10.502606 V 2.1626392 Z"
+       id="path28"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px"
+       sodipodi:nodetypes="ccccccccccccsccccccscc" />
+    <path
+       class="cls-1"
+       d="M 459.3118,45.36426 V 2.1626392 h 26.42431 v 9.4372458 h -14.99055 v 7.549799 h 14.1433 v 9.227532 h -14.1433 v 7.340077 h 14.99055 v 9.646967 z"
+       id="path30"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:1.67774px" />
+    <line
+       class="cls-2"
+       x1="0.79579717"
+       y1="60.052807"
+       x2="486.51624"
+       y2="60.052807"
+       id="line32"
+       style="fill:none;stroke:#ef3e33;stroke-width:3.35545px;stroke-miterlimit:3.86" />
+    <polygon
+       class="cls-3"
+       points="461.91,49.99 456.38,53.65 453.55,30.73 473.54,42.29 467.88,46.04 475.72,57.88 469.75,61.83 "
+       id="polygon34"
+       style="display:inline;fill:#ef3e33;stroke:#ffffff"
+       transform="matrix(0.83886645,0,0,0.83886645,0.38475874,0.37585206)" />
+  </g>
+  <xhtml:style
+     id="mmjo4k6z.e8">
+            /* --- Control Panel Wrapper &amp; Toggle Button --- */
+            #IQTweak_panel-wrapper {
+                position: relative; margin-left: auto; display: flex;
+                align-items: flex-end; flex-direction: column;
+            }
+            #IQTweak_control-panel-toggle {
+                width: 30px; height: 30px; background-color: #006bb6;
+                color: white; border-radius: 5px; display: flex; justify-content: center;
+                align-items: center; cursor: pointer; font-size: 1.2em; z-index: 10000;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out;
+                font-family: sans-serif; margin-top: 10px;
+            }
+            #IQTweak_control-panel-toggle.open { transform: rotate(180deg); }
+
+            /* --- Control Panel Box --- */
+            #IQTweak_control-panel {
+                position: absolute; bottom: calc(100% + 10px); right: 0;
+                background-color: #f8f9fa; border: 1px solid #dee2e6;
+                border-radius: 8px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 9999; max-height: 80vh; overflow-y: auto;
+                width: 300px; display: none;
+                transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+                opacity: 0; transform: translateY(10px);
+            }
+            #IQTweak_control-panel.show { display: block; opacity: 1; transform: translateY(0); }
+            #IQTweak_control-panel h3 {
+                margin-top: 0; margin-bottom: 15px; color: #343a40;
+                font-size: 1.2em; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;
+            }
+
+            /* --- Feature Items &amp; Toggles within Panel --- */
+            .IQTweak_feature-item {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dotted #eee;
+            }
+            .IQTweak_feature-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+            .IQTweak_feature-label-and-qmark {
+                display: flex; align-items: center; flex-grow: 1; margin-right: 10px;
+            }
+            .IQTweak_feature-label-and-qmark label {
+                margin-bottom: 0; cursor: pointer; color: #495057; font-size: 0.95em;
+            }
+            .IQTweak_q-mark-container {
+                display: inline-flex; align-items: center; justify-content: center;
+                width: 1.1em; height: 1.1em; border: 1px solid #006bb6;
+                border-radius: 50%; font-size: 0.8em; color: #006bb6;
+                cursor: help; margin-right: 12px; flex-shrink: 0;
+                transition: all 0.2s ease;
+            }
+            .IQTweak_q-mark-container:hover { background-color: #e0f2f7; border-color: #005691; }
+
+            /* --- Global Tooltip for Help Icons --- */
+            #IQTweak_global-tooltip {
+                width: 220px; background-color: rgba(0, 0, 0, 0.85); color: #fff;
+                text-align: center; border-radius: 6px; padding: 8px 12px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 0.8em; line-height: 1.4;
+                position: fixed; z-index: 2147483647; visibility: hidden; opacity: 0;
+                transition: opacity 0.2s ease-in-out; pointer-events: none;
+            }
+            #IQTweak_global-tooltip::after {
+                content: &quot;&quot;; position: absolute; top: 100%; left: 50%;
+                margin-left: -5px; border-width: 5px; border-style: solid;
+                border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+            }
+            #IQTweak_global-tooltip.tooltip-bottom-arrow::after {
+                top: -10px; border-color: transparent transparent rgba(0, 0, 0, 0.85) transparent;
+            }
+
+            /* --- Slider Switch CSS --- */
+            .switch {
+                position: relative; display: inline-block;
+                width: 30px; height: 15px; flex-shrink: 0;
+            }
+            .switch input { opacity: 0; width: 0; height: 0; }
+            .slider {
+                position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+                background-color: #ccc; transition: .4s; border-radius: 15px;
+            }
+            .slider:before {
+                position: absolute; content: &quot;&quot;; height: 12px; width: 12px;
+                left: 1.5px; bottom: 1.5px;
+                background-color: white; transition: .4s; border-radius: 50%;
+            }
+            input:checked + .slider { background-color: #2196F3; }
+            input:checked + .slider:before { transform: translateX(15px); }
+
+            /* --- Filter Button Animation --- */
+            .needs-refresh {
+                background-color: #006bb6 !important; color: #ffffff !important;
+                border-color: #005691 !important;
+                box-shadow: 0 0 10px rgba(0, 107, 182, 0.7);
+                animation: pulse-animation 5.0s infinite;
+            }
+            @keyframes pulse-animation {
+                0% { box-shadow: 0 0 0 0 rgba(0, 107, 182, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(0, 107, 182, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(0, 107, 182, 0); }
+            }
+            /* --- Bug Report Section --- */
+            #IQTweak_bug-report-text {
+                font-size: 0.85em; margin-top: 15px; margin-bottom: 10px;
+            }
+            #IQTweak_copy-bug-info-button {
+                display: block; width: 100%; padding: 8px 12px; margin-bottom: 10px;
+            }
+            /* --- EAN Tweakers Search --- */
+            .iq-tweaks-ean-tweakers-link {
+                display: inline-flex; align-items: center;
+                margin-left: 6px; vertical-align: middle;
+                opacity: 0.8; transition: opacity 0.2s ease;
+            }
+            .iq-tweaks-ean-tweakers-link:hover { opacity: 1; }
+            .iq-tweaks-ean-tweakers-link img {
+                width: 14px; height: 14px; display: block;
+            }
+        </xhtml:style>
+</svg>
