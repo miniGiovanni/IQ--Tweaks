@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.17.5
+// @version      0.17.6
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.17.5"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.17.6"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -424,39 +424,37 @@
                 });
             };
 
-            // === PASS 1: fix existing fa-* icons (already-working pages) ===
-            document.querySelectorAll('i[class*="fa-"]').forEach(icon => {
-                // Walk up max 3 levels to find a container with meaningful text.
-                let container = icon.parentElement;
-                for (let depth = 0; depth < 3 && container; depth++) {
-                    if (container.textContent.trim().length > 5) break;
-                    container = container.parentElement;
-                }
-                if (!container) return;
+            // === PASS 1: fix existing fa-* icons inside known stock containers ===
+            // We start from known stock container selectors and only look at icons WITHIN them.
+            // This prevents touching unrelated icons (hearts, baskets, trucks) that happen to
+            // share an ancestor with stock text.
+            const STOCK_CONTAINER_SELECTORS = [
+                'div.card-product-list-stock',      // list pages
+                'dt.col-lg-8.col-7.border-bottom',  // product page spec table
+                'small.text-muted',                 // winkelwagen / search rows
+            ];
 
+            document.querySelectorAll(STOCK_CONTAINER_SELECTORS.join(', ')).forEach(container => {
                 const text = container.textContent.toLowerCase();
 
-                // Skip if this icon is not inside a stock-related block.
+                // Skip containers that don't contain stock-related text.
                 if (!text.match(/voorraad|levertijd|werkdagen|weken|leverbaar|magazijn/)) return;
 
                 const state = classifyText(text);
                 if (!state) return;
 
-                // Only fix icons that are wrong (don't needlessly modify correct green checks).
-                const targetClasses = ICON_MAP[state];
-                const alreadyCorrect = state === 'inStock' && icon.classList.contains('text-success') && icon.classList.contains('fa-check');
-                if (!alreadyCorrect) swapIcon(icon, targetClasses);
+                // Find the stock icon directly inside this container (immediate fa-* child icon).
+                // Use :scope to avoid reaching into nested buttons or action links.
+                const icon = container.querySelector(':scope > i[class*="fa-"]');
+                if (!icon) return;
+
+                const alreadyCorrect = state === 'inStock' &&
+                icon.classList.contains('fa-check') && icon.classList.contains('text-success');
+                if (!alreadyCorrect) swapIcon(icon, ICON_MAP[state]);
             });
 
-                // === PASS 2: inject icons into known text containers that have none ===
-                // These selectors cover the winkelwagen and any other page where stock text
-                // appears as plain text without a pre-existing <i> icon.
-                const TEXT_CONTAINER_SELECTORS = [
-                    'small.text-muted',           // winkelwagen product rows
-                    'div.card-product-list-stock', // list pages (belt-and-braces)
-                ];
-
-                document.querySelectorAll(TEXT_CONTAINER_SELECTORS.join(', ')).forEach(container => {
+                // === PASS 2: inject icons into stock containers that have none yet ===
+                document.querySelectorAll(STOCK_CONTAINER_SELECTORS.join(', ')).forEach(container => {
                     const text = container.textContent.toLowerCase();
 
                     // Only process stock-related containers.
