@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.17.1 // Keep in sync with VERSION_NUMBER below
+// @version      0.17.5
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.17.1"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.17.5"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -315,68 +315,196 @@
     }
 
     /**
-     * Fixes stock status icons sitewide to be visually distinct:
-     *   - "Online op voorraad" / "Op voorraad in ons magazijn": green check (unchanged)
-     *   - "Op voorraad bij leverancier" (stock-status-color-2): yellow check
-     *   - "Onbekende levertijd" / "levertijd onbekend": gray X
+     * Fixes stock status icons sitewide to be visually consistent:
+     *   - In stock / direct leverbaar:         green check  (fa-check text-success)
+     *   - Bij leverancier / werkdagen / weken:  yellow check (fa-check text-warning)
+     *   - Onbekende levertijd:                  gray X       (fa-times text-secondary)
      *
-     * Strategy: find the <i> icon element in each stock block, save its original
-     * classes, then swap them. One approach for all locations on the site.
+     * Two-pass strategy:
+     *   Pass 1 — existing icons (fa-check / fa-times / fa-calendar etc):
+     *     Walk up from the icon to find the surrounding text, classify, swap icon classes.
+     *   Pass 2 — known stock text containers with NO icon yet:
+     *     Scan selectors like small.text-muted that appear in the winkelwagen and elsewhere.
+     *     Classify from text, inject a new icon, and strip any incorrect text-colour classes
+     *     from inline spans (e.g. <span class="text-success">levertijd onbekend</span>).
      */
     function stockInformationIconFix() {
         const isEnabled = currentSettings.enableStockInformationIconFix.value;
-        const MODIFIED_CLASS = 'iq-tweaks-stock-icon-modified';
+        const MODIFIED_CLASS   = 'iq-tweaks-stock-icon-modified';
+        const INJECTED_CLASS   = 'iq-tweaks-stock-icon-injected';
+        const TEXT_FIXED_CLASS = 'iq-tweaks-stock-text-fixed';
 
-        // --- Revert: restore original classes on any icon we previously touched ---
+        // --- Revert pass 1: restore swapped icons ---
         document.querySelectorAll(`i.${MODIFIED_CLASS}`).forEach(icon => {
             icon.className = icon.dataset.iqTweaksOriginalClasses;
             delete icon.dataset.iqTweaksOriginalClasses;
         });
 
+        // --- Revert pass 2: remove injected icons and their spacers ---
+        document.querySelectorAll(`i.${INJECTED_CLASS}`).forEach(icon => icon.remove());
+        document.querySelectorAll('.iq-tweaks-stock-icon-spacer').forEach(s => s.remove());
+
+        // --- Revert pass 3: restore stripped text-colour classes ---
+        document.querySelectorAll(`.${TEXT_FIXED_CLASS}`).forEach(el => {
+            el.className = el.dataset.iqTweaksOriginalClasses;
+            delete el.dataset.iqTweaksOriginalClasses;
+            el.classList.remove(TEXT_FIXED_CLASS);
+        });
+
         if (!isEnabled) return;
 
-        // --- Core helper: swap icon classes, saving originals for revert ---
-        const fixIcon = (icon, newClasses) => {
+        // --- Shared constants ---
+        const ICON_INSTOCK     = 'fa fa-check fa-lg ps-1 text-success';
+        const ICON_LEVERANCIER = 'fa fa-check fa-lg ps-1 text-warning';
+        const ICON_ONBEKEND    = 'fa fa-times fa-lg ps-1 text-secondary';
+
+        // Maps a classification to the correct icon class string.
+        const ICON_MAP = { inStock: ICON_INSTOCK, leverancier: ICON_LEVERANCIER, onbekend: ICON_ONBEKEND };
+
+        // Colour classes that should never appear on stock text spans (we strip them).
+        const WRONG_TEXT_COLORS = ['text-success', 'text-warning', 'text-danger', 'text-primary'];
+
+        // --- Classify text into a stock state ---
+        // Returns 'inStock', 'leverancier', 'onbekend', or null (unrecognised).
+        const classifyText = (raw) => {
+            const text = raw.toLowerCase();
+            if (text.includes('onbekende levertijd') ||
+                text.includes('levertijd onbekend'))    return 'onbekend';
+            if (text.includes('werkdagen') || text.includes('weken') ||
+                text.includes('leverancier'))           return 'leverancier';
+            if (text.includes('voorraad') || text.includes('leverbaar') ||
+                text.includes('magazijn'))              return 'inStock';
+            return null;
+        };
+
+        // --- Helper: swap an existing <i> icon's classes ---
+        const swapIcon = (icon, newClasses) => {
             icon.dataset.iqTweaksOriginalClasses = icon.className;
             icon.className = newClasses + ' ' + MODIFIED_CLASS;
         };
 
-        // --- Classify a text block into a stock state ---
-        // Returns 'leverancier', 'onbekend', or null (= leave alone / already correct)
-        const classifyText = (text) => {
-            if (text.includes('werkdagen') || text.includes('weken') ||
-                text.includes('leverancier')) return 'leverancier';
-            if (text.includes('onbekende levertijd') ||
-                text.includes('levertijd onbekend')) return 'onbekend';
-            return null;
+        // --- Helper: inject a brand-new icon into a container ---
+        // If the container's text contains a " | " separator (e.g. "211526 | Onbekende levertijd"),
+        // the icon is inserted right after the pipe so it reads "211526 | X Onbekende levertijd".
+        // Otherwise it is prepended to the container.
+        const injectIcon = (container, newClasses) => {
+            const icon = document.createElement('i');
+            icon.className = newClasses + ' ' + INJECTED_CLASS;
+            icon.setAttribute('aria-hidden', 'true');
+
+            // Walk through child nodes looking for a text node that contains " | "
+            let insertedAfterPipe = false;
+            for (const node of container.childNodes) {
+                if (node.nodeType !== Node.TEXT_NODE) continue;
+                const pipeIdx = node.textContent.indexOf(' | ');
+                if (pipeIdx === -1) continue;
+                // Split the text node at the point just after " | "
+                const after = node.splitText(pipeIdx + 3); // 3 = length of ' | '
+                after.parentNode.insertBefore(icon, after);
+                // Add a space between the icon and the following text, marked for revert.
+                const spacer1 = document.createElement('span');
+                spacer1.className = 'iq-tweaks-stock-icon-spacer';
+                spacer1.textContent = ' ';
+                after.parentNode.insertBefore(spacer1, after);
+                insertedAfterPipe = true;
+                break;
+            }
+
+            if (!insertedAfterPipe) container.prepend(icon);
         };
 
-        // --- Icon class sets ---
-        const ICON_LEVERANCIER = 'fa fa-check fa-lg ps-1 text-warning';
-        const ICON_ONBEKEND    = 'fa fa-times fa-lg ps-1 text-secondary';
+            // --- Helper: strip wrong text-colour classes from child spans ---
+            const fixTextColors = (container) => {
+                container.querySelectorAll('span').forEach(span => {
+                    const wrongClass = WRONG_TEXT_COLORS.find(c => span.classList.contains(c));
+                    if (!wrongClass) return;
+                    span.dataset.iqTweaksOriginalClasses = span.className;
+                    WRONG_TEXT_COLORS.forEach(c => span.classList.remove(c));
+                    span.classList.add(TEXT_FIXED_CLASS);
+                });
+            };
 
-        // --- Find every stock <i> on the page ---
-        // The site uses fa-check icons inside stock blocks. We find the icon,
-        // read the surrounding text to classify, then swap if needed.
-        document.querySelectorAll('i.fa-check, i.fa-times').forEach(icon => {
-            // Walk up to find a meaningful text container (max 3 levels)
-            let container = icon.parentElement;
-            for (let depth = 0; depth < 3 && container; depth++) {
-                if (container.textContent.length > 5) break;
-                container = container.parentElement;
-            }
-            if (!container) return;
+            // === PASS 1: fix existing fa-* icons (already-working pages) ===
+            document.querySelectorAll('i[class*="fa-"]').forEach(icon => {
+                // Walk up max 3 levels to find a container with meaningful text.
+                let container = icon.parentElement;
+                for (let depth = 0; depth < 3 && container; depth++) {
+                    if (container.textContent.trim().length > 5) break;
+                    container = container.parentElement;
+                }
+                if (!container) return;
 
-            const text = container.textContent.toLowerCase();
+                const text = container.textContent.toLowerCase();
 
-            // Skip icons that are not stock-related
-            if (!text.match(/voorraad|levertijd|werkdagen|weken|leverbaar|magazijn/)) return;
+                // Skip if this icon is not inside a stock-related block.
+                if (!text.match(/voorraad|levertijd|werkdagen|weken|leverbaar|magazijn/)) return;
 
-            const state = classifyText(text);
-            if (state === 'leverancier') fixIcon(icon, ICON_LEVERANCIER);
-            else if (state === 'onbekend') fixIcon(icon, ICON_ONBEKEND);
-            // null = in stock / already green, leave it alone
-        });
+                const state = classifyText(text);
+                if (!state) return;
+
+                // Only fix icons that are wrong (don't needlessly modify correct green checks).
+                const targetClasses = ICON_MAP[state];
+                const alreadyCorrect = state === 'inStock' && icon.classList.contains('text-success') && icon.classList.contains('fa-check');
+                if (!alreadyCorrect) swapIcon(icon, targetClasses);
+            });
+
+                // === PASS 2: inject icons into known text containers that have none ===
+                // These selectors cover the winkelwagen and any other page where stock text
+                // appears as plain text without a pre-existing <i> icon.
+                const TEXT_CONTAINER_SELECTORS = [
+                    'small.text-muted',           // winkelwagen product rows
+                    'div.card-product-list-stock', // list pages (belt-and-braces)
+                ];
+
+                document.querySelectorAll(TEXT_CONTAINER_SELECTORS.join(', ')).forEach(container => {
+                    const text = container.textContent.toLowerCase();
+
+                    // Only process stock-related containers.
+                    if (!text.match(/voorraad|levertijd|werkdagen|weken|leverbaar|magazijn/)) return;
+
+                    const state = classifyText(text);
+                    if (!state) return;
+
+                    // Fix any wrongly coloured text spans inside (e.g. <span class="text-success">levertijd onbekend</span>).
+                    fixTextColors(container);
+
+                    // If there's already an <i> in this container, Pass 1 handled it — don't double-inject.
+                    if (container.querySelector('i[class*="fa-"]')) return;
+
+                    injectIcon(container, ICON_MAP[state]);
+                });
+
+                // Also strip wrong text colours from bare stock spans outside of the above containers
+                // (e.g. a lone <span class="text-success">levertijd onbekend</span>),
+                // and inject an icon directly before each such span.
+                document.querySelectorAll(WRONG_TEXT_COLORS.map(c => `span.${c}`).join(', ')).forEach(span => {
+                    const text = span.textContent.toLowerCase();
+                    if (!text.match(/voorraad|levertijd|werkdagen|weken|leverbaar|magazijn/)) return;
+                    if (span.classList.contains(TEXT_FIXED_CLASS)) return; // already handled above
+
+                    const state = classifyText(text);
+                    if (!state) return;
+
+                    // Strip the wrong colour class.
+                    span.dataset.iqTweaksOriginalClasses = span.className;
+                    WRONG_TEXT_COLORS.forEach(c => span.classList.remove(c));
+                    span.classList.add(TEXT_FIXED_CLASS);
+
+                    // Inject an icon immediately before this span (unless one was already injected).
+                    const prevSibling = span.previousSibling;
+                    const alreadyHasIcon = prevSibling && prevSibling.nodeType === Node.ELEMENT_NODE &&
+                    prevSibling.tagName === 'I' && prevSibling.classList.contains(INJECTED_CLASS);
+                    if (!alreadyHasIcon) {
+                        const icon = document.createElement('i');
+                        icon.className = ICON_MAP[state] + ' ' + INJECTED_CLASS;
+                        icon.setAttribute('aria-hidden', 'true');
+                        span.before(icon);
+                        const spacer2 = document.createElement('span');
+                        spacer2.className = 'iq-tweaks-stock-icon-spacer';
+                        spacer2.textContent = ' ';
+                        span.before(spacer2);
+                    }
+                });
     }
 
     /**
