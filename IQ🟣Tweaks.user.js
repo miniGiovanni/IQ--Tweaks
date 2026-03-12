@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.17.6
+// @version      0.19.6
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.17.6"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.19.6"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -71,7 +71,8 @@
  enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
  enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
  enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
- enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele of onvoltooide functies in." },
+ enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
+ enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele functies in. Momenteel: S = Specificaties, A = Informatie, W = terug naar categorie." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -87,6 +88,7 @@
         enableContentFeatures: contentFeatures,
         enableEanTweakersSearch: eanTweakersSearch,
         enableFunFeatures: funFeatures,
+        enableSpecsConfetti: specsConfetti,
         enableExperimentalFeatures: experimentalFeatures,
     };
 
@@ -104,10 +106,37 @@
     /**
      * Main entry point for the script. Runs after the rest of the page has loaded.
      */
+    /**
+     * Injects the IQ🟣Tweaks banner as comment nodes at the top of <html>,
+     * visible in the Elements panel. Runs once from initialize() — never from funFeatures.
+     */
+    function injectElementsBanner() {
+        if (document.documentElement.dataset.iqTweaksSrcEgg) return; // already injected
+        document.documentElement.dataset.iqTweaksSrcEgg = '1';
+        const border = ' ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ ';
+        const bannerLines = [
+            ' ',
+ border,
+ ' ',
+ ` █  IQ🟣Tweaks ${VERSION_NUMBER}`,
+ ' █  Wat doe jij hier? 👀',
+ ' █  by mini · Hop On LLC',
+ ' █  Vind je een issue? Stuur gerust een bug report via email!',
+ ' ',
+ border,
+ ' ',
+        ];
+        [...bannerLines].reverse().forEach(line => {
+            const comment = document.createComment(line);
+            document.documentElement.insertBefore(comment, document.documentElement.firstChild);
+        });
+    }
+
     function initialize() {
         loadSettings();
         insertCSS();
         addCredits();
+        injectElementsBanner();
         createControlPanel();
         applyAllFeatures();
 
@@ -443,13 +472,19 @@
                 const state = classifyText(text);
                 if (!state) return;
 
-                // Find the stock icon directly inside this container (immediate fa-* child icon).
-                // Use :scope to avoid reaching into nested buttons or action links.
-                const icon = container.querySelector(':scope > i[class*="fa-"]');
+                // Find the stock icon inside this container.
+                // For div.card-product-list-stock the icon can be nested inside a <p><strong>,
+                // so we allow one level of nesting there. For all other containers we stay
+                // at direct-child scope to avoid touching unrelated icons (hearts, baskets, etc.).
+                const isCardStock = container.matches('div.card-product-list-stock');
+                const icon = isCardStock
+                ? container.querySelector('i[class*="fa-"]')
+                : container.querySelector(':scope > i[class*="fa-"]');
                 if (!icon) return;
 
-                const alreadyCorrect = state === 'inStock' &&
-                icon.classList.contains('fa-check') && icon.classList.contains('text-success');
+                const alreadyCorrect =
+                (state === 'inStock'     && icon.classList.contains('fa-check') && icon.classList.contains('text-success')) ||
+                (state === 'leverancier' && icon.classList.contains('fa-check') && icon.classList.contains('text-warning'));
                 if (!alreadyCorrect) swapIcon(icon, ICON_MAP[state]);
             });
 
@@ -878,6 +913,16 @@
             panel.classList.toggle('show');
             toggleBtn.classList.toggle('open');
         });
+
+        // Close the panel when clicking anywhere outside of it.
+        document.addEventListener('click', (e) => {
+            if (!panel.classList.contains('show')) return;
+            const wrapper = document.getElementById(SCRIPT_PREFIX + 'panel-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                panel.classList.remove('show');
+                toggleBtn.classList.remove('open');
+            }
+        });
     }
 
     /**
@@ -985,18 +1030,62 @@
         if (footerDiv.querySelector('.iq-tweaks-credits')) return; // already added
 
         const p = document.createElement('p');
-        p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} created by mini of Hop On LLC - Original idea by 🎸`;
+        p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} · by mini · Hop On LLC - Original idea by 🎸`;
         p.className = 'text-muted mb-0 iq-tweaks-credits';
         footerDiv.appendChild(p);
     }
 
     /**
-     * Placeholder for future experimental features.
-     * Previously toggled addAITestFeature and toggleAttributeNameDisplay,
-     * which have since been moved to contentFeatures().
+     * Toggles experimental / in-progress features.
      */
     function experimentalFeatures() {
-        // No experimental features currently active.
+        const isEnabled = currentSettings.enableExperimentalFeatures.value;
+        const ACTIVE_ATTR = 'data-iq-tweaks-experimental-active';
+
+        if (!isEnabled) {
+            document.body.removeAttribute(ACTIVE_ATTR);
+            return;
+        }
+
+        if (document.body.hasAttribute(ACTIVE_ATTR)) return;
+        document.body.setAttribute(ACTIVE_ATTR, '1');
+
+        // --- 1. Keyboard shortcuts for product page tabs ---
+        // S → Specificaties, A → Informatie (or first info tab found)
+        document.addEventListener('keydown', (e) => {
+            if (!currentSettings.enableExperimentalFeatures.value) return;
+            if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            if (e.key === 's' || e.key === 'S') {
+                const tab = document.querySelector('a[data-bs-target="#tab_specs"]');
+                if (!tab) return;
+                e.preventDefault();
+                tab.click();
+                tab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // Trigger confetti if the specs confetti setting is on.
+                if (currentSettings.enableSpecsConfetti?.value) spawnSpecsConfetti();
+            }
+
+            if (e.key === 'a' || e.key === 'A') {
+                // Find the Informatie tab by its visible label text.
+                const tabs = document.querySelectorAll('a[data-bs-toggle="tab"], a[data-bs-toggle="pill"]');
+                const infoTab = [...tabs].find(t => t.textContent.trim().toLowerCase().includes('informatie'));
+                if (!infoTab) return;
+                e.preventDefault();
+                infoTab.click();
+                infoTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            if (e.key === 'w' || e.key === 'W') {
+                // Navigate to the parent category — the second-to-last breadcrumb link.
+                // The last link is the current page's own category, so we step one further back.
+                const crumbLinks = [...document.querySelectorAll('li.breadcrumb-item a[href]')];
+                if (crumbLinks.length < 2) return;
+                e.preventDefault();
+                window.location.href = crumbLinks[crumbLinks.length - 2].href;
+            }
+        });
     }
 
     // --- Easter Egg helpers ---
@@ -1014,6 +1103,38 @@
         }
     }
 
+    /** Spawns 🤓 confetti from the centre of the Specificaties tab button. */
+    function spawnSpecsConfetti() {
+        if (!currentSettings.enableSpecsConfetti.value) return;
+        const tab = document.querySelector('a[data-bs-target="#tab_specs"]');
+        if (!tab) return;
+        const rect = tab.getBoundingClientRect();
+        spawnConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2, ['🤓'], 4);
+    }
+
+    /**
+     * Attaches or detaches the specs-tab confetti listener.
+     */
+    function specsConfetti() {
+        const isEnabled = currentSettings.enableSpecsConfetti.value;
+        const ATTR = 'data-iq-tweaks-specs-confetti';
+
+        if (!isEnabled) {
+            // Remove the listener flag so it re-attaches if re-enabled.
+            document.querySelectorAll(`a[data-bs-target="#tab_specs"]`).forEach(tab => {
+                tab.removeAttribute(ATTR);
+                tab.removeEventListener('click', spawnSpecsConfetti);
+            });
+            return;
+        }
+
+        document.querySelectorAll(`a[data-bs-target="#tab_specs"]`).forEach(tab => {
+            if (tab.hasAttribute(ATTR)) return; // already attached
+            tab.setAttribute(ATTR, '1');
+            tab.addEventListener('click', spawnSpecsConfetti);
+        });
+    }
+
     /**
      * Toggles all fun/easter-egg features.
      */
@@ -1029,20 +1150,30 @@
             // Disconnect basket observer if one was stored from a previous activation.
             document.body._iqTweaksBasketObserver?.disconnect();
             delete document.body._iqTweaksBasketObserver;
+            // Remove phantom pixel if present.
+            document.getElementById('iq-tweaks-phantom-pixel')?.remove();
+            // Remove dev-click marker from bug report text paragraph.
+            const bugText = document.getElementById(SCRIPT_PREFIX + 'bug-report-text');
+            if (bugText) {
+                delete bugText.dataset.iqTweaksDevListening;
+                bugText.style.cursor = '';
+            }
+            // Remove dev-click marker and version span (restore credits to plain text).
+            const creditsEl = document.querySelector('.iq-tweaks-credits');
+            if (creditsEl) {
+                delete creditsEl.dataset.iqTweaksDevListening;
+                const badge = creditsEl.querySelector('#iq-tweaks-version-badge');
+                if (badge) {
+                    badge.replaceWith(document.createTextNode(badge.textContent));
+                }
+                creditsEl.normalize();
+            }
             return;
         }
 
         // Guard against double-registering if applyAllFeatures is called again.
         if (document.body.hasAttribute(ACTIVE_ATTR)) return;
         document.body.setAttribute(ACTIVE_ATTR, '1');
-
-        // --- 1. Nerd confetti on "Specificaties" tab click ---
-        document.querySelectorAll('a[data-bs-target="#tab_specs"]').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                if (!currentSettings.enableFunFeatures.value) return;
-                spawnConfetti(e.clientX, e.clientY, ['🤓', '📋', '🔧', '💻', '📐'], 12);
-            });
-        });
 
         // --- 2. Konami code easter egg ---
         const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
@@ -1066,7 +1197,63 @@
             }
         });
 
-        // --- 3. Basket count 69 = nice ---
+        // --- 5. Phantom pixel (when breadcrumb contains g=082) ---
+        // Checks the breadcrumb links on the current page rather than the URL bar,
+        // because the page URL itself won't contain the ?m=art&g=082 parameter.
+        const hasG082 = !!document.querySelector('li.breadcrumb-item a[href*="g=082"]');
+        if (hasG082) {
+            if (!document.getElementById('iq-tweaks-phantom-pixel')) {
+                const pixel = document.createElement('div');
+                pixel.id = 'iq-tweaks-phantom-pixel';
+                pixel.style.cssText = [
+                    'width: 2px', 'height: 2px', 'background-color: #000',
+ 'position: fixed', 'top: 40%', 'left: 50%',
+ 'transform: translateX(-50%)', 'z-index: 999999',
+ 'pointer-events: none',
+                ].join('; ');
+                document.body.appendChild(pixel);
+            }
+        }
+
+        // --- 6. Bug report text secret: click 5× quickly to flash all panel toggles ---
+        // On the paragraph above the copy button, not the button itself (which has its own feedback).
+        const bugText = document.getElementById(SCRIPT_PREFIX + 'bug-report-text');
+        if (bugText && !bugText.dataset.iqTweaksDevListening) {
+            bugText.dataset.iqTweaksDevListening = '1';
+            bugText.style.cursor = 'default';
+            let devClicks = 0;
+            let devClickTimer = null;
+            bugText.addEventListener('click', () => {
+                if (!currentSettings.enableFunFeatures.value) return;
+                devClicks++;
+                clearTimeout(devClickTimer);
+                devClickTimer = setTimeout(() => { devClicks = 0; }, 2000);
+                if (devClicks >= 5) {
+                    devClicks = 0;
+                    clearTimeout(devClickTimer);
+                    // Open the control panel if it isn't already open.
+                    const panel = document.getElementById(SCRIPT_PREFIX + 'control-panel');
+                    const toggleBtn = document.getElementById(SCRIPT_PREFIX + 'control-panel-toggle');
+                    if (panel && !panel.classList.contains('show')) {
+                        panel.classList.add('show');
+                        toggleBtn?.classList.add('open');
+                    }
+                    // Rainbow wave: each slider gets a hue evenly spaced across the spectrum.
+                    const sliders = document.querySelectorAll(`.${SCRIPT_PREFIX}slider`);
+                    const total = sliders.length;
+                    sliders.forEach((slider, i) => {
+                        const hue = Math.round((i / total) * 360);
+                        setTimeout(() => {
+                            slider.style.transition = 'background-color 0.15s';
+                            slider.style.backgroundColor = `hsl(${hue}, 90%, 55%)`;
+                            setTimeout(() => { slider.style.backgroundColor = ''; }, 400);
+                        }, i * 80);
+                    });
+                    const totalDelay = sliders.length * 80 + 250;
+                    setTimeout(() => showTemporaryMessage('🎉 Je bent nu een developer, gefeliciteerd! Dit doet niks.'), totalDelay);
+                }
+            });
+        }
         // Instead of a toast, replaces the basket count number with "nice" when it hits 69.
         const basketCountEl = document.querySelector('.basket_count');
         if (basketCountEl) {
