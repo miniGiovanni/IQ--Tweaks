@@ -69,9 +69,9 @@
         enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
         enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
  enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
- enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
- enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
- enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
+ enableEanTweakersSearch: { value: true, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
+ enableFunFeatures: { value: true, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
+ enableSpecsConfetti: { value: false, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
  enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele functies in. Momenteel: S = Specificaties, A = Informatie, W = terug naar categorie." },
     };
 
