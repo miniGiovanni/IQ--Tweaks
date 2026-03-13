@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.21.1
+// @version      0.21.3
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.21.1"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.21.3"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -746,6 +746,11 @@
         .iq-tweaks-artikelnummer {
             font-size: 0.7em; margin-left: 4px;
         }
+        /* --- Keyboard shortcut hints --- */
+        .iq-tweaks-shortcut-hint {
+            font-size: 0.75em; opacity: 0.5; margin-left: 2px;
+            font-weight: normal; letter-spacing: 0;
+        }
         /* --- EAN Tweakers Search --- */
         .iq-tweaks-ean-tweakers-link {
             display: inline-flex; align-items: center;
@@ -1041,14 +1046,43 @@
     /**
      * Toggles keyboard shortcut features for product pages.
      * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
+     * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
+     * are discoverable. Removed again when the feature is disabled.
      */
     function keyboardShortcuts() {
         const isEnabled = currentSettings.enableKeyboardShortcuts.value;
         const ACTIVE_ATTR = 'data-iq-tweaks-keyboard-active';
+        const HINT_CLASS = 'iq-tweaks-shortcut-hint';
+
+        // Always clean up existing hints first so toggling off removes them cleanly.
+        document.querySelectorAll(`.${HINT_CLASS}`).forEach(el => el.remove());
 
         if (!isEnabled) {
             document.body.removeAttribute(ACTIVE_ATTR);
             return;
+        }
+
+        // Inject shortcut hints into tab labels.
+        const specsTab = document.querySelector('a[data-bs-target="#tab_specs"]');
+        if (specsTab) {
+            const hint = document.createElement('span');
+            hint.className = HINT_CLASS;
+            hint.textContent = ' (S)';
+            const visibleSpan = specsTab.querySelector('.d-none.d-sm-block') || specsTab;
+            visibleSpan.appendChild(hint);
+        }
+
+        const tabs = document.querySelectorAll('a[data-bs-toggle="tab"], a[data-bs-toggle="pill"]');
+        const infoTab = [...tabs].find(t =>
+        t.textContent.trim().toLowerCase().includes('informatie') &&
+        !t.querySelector(`.${HINT_CLASS}`)
+        );
+        if (infoTab) {
+            const hint = document.createElement('span');
+            hint.className = HINT_CLASS;
+            hint.textContent = ' (A)';
+            const visibleSpan = infoTab.querySelector('.d-none.d-sm-block') || infoTab;
+            visibleSpan.appendChild(hint);
         }
 
         if (document.body.hasAttribute(ACTIVE_ATTR)) return;
