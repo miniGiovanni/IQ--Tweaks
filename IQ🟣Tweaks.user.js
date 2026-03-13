@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.19.6
+// @version      0.21.1
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.19.6"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.21.1"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -69,10 +69,11 @@
         enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
         enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
  enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
- enableEanTweakersSearch: { value: true, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
- enableFunFeatures: { value: true, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
- enableSpecsConfetti: { value: false, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
- enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakelt experimentele functies in. Momenteel: S = Specificaties, A = Informatie, W = terug naar categorie." },
+ enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
+ enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
+ enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
+ enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie." },
+ enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Experimentele functies: standaard sortering op prijs oplopend, standaard filter op direct leverbaar, Z+klik om filter en alle opties eronder te selecteren." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -89,6 +90,7 @@
         enableEanTweakersSearch: eanTweakersSearch,
         enableFunFeatures: funFeatures,
         enableSpecsConfetti: specsConfetti,
+        enableKeyboardShortcuts: keyboardShortcuts,
         enableExperimentalFeatures: experimentalFeatures,
     };
 
@@ -121,6 +123,7 @@
  ` █  IQ🟣Tweaks ${VERSION_NUMBER}`,
  ' █  Wat doe jij hier? 👀',
  ' █  by mini · Hop On LLC',
+ ' █  WTFPL license, 2026.',
  ' █  Vind je een issue? Stuur gerust een bug report via email!',
  ' ',
  border,
@@ -1030,13 +1033,71 @@
         if (footerDiv.querySelector('.iq-tweaks-credits')) return; // already added
 
         const p = document.createElement('p');
-        p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} · by mini · Hop On LLC - Original idea by 🎸`;
+        p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} · by mini · Hop On LLC - Original idea by 🎸 · WTFPL license, 2026.`;
         p.className = 'text-muted mb-0 iq-tweaks-credits';
         footerDiv.appendChild(p);
     }
 
     /**
-     * Toggles experimental / in-progress features.
+     * Toggles keyboard shortcut features for product pages.
+     * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
+     */
+    function keyboardShortcuts() {
+        const isEnabled = currentSettings.enableKeyboardShortcuts.value;
+        const ACTIVE_ATTR = 'data-iq-tweaks-keyboard-active';
+
+        if (!isEnabled) {
+            document.body.removeAttribute(ACTIVE_ATTR);
+            return;
+        }
+
+        if (document.body.hasAttribute(ACTIVE_ATTR)) return;
+        document.body.setAttribute(ACTIVE_ATTR, '1');
+
+        document.addEventListener('keydown', (e) => {
+            if (!currentSettings.enableKeyboardShortcuts.value) return;
+            if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            if (e.key === 's' || e.key === 'S') {
+                const tab = document.querySelector('a[data-bs-target="#tab_specs"]');
+                if (!tab) return;
+                e.preventDefault();
+                tab.click();
+                tab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                if (currentSettings.enableSpecsConfetti?.value) spawnSpecsConfetti();
+            }
+
+            if (e.key === 'a' || e.key === 'A') {
+                const tabs = document.querySelectorAll('a[data-bs-toggle="tab"], a[data-bs-toggle="pill"]');
+                const infoTab = [...tabs].find(t => t.textContent.trim().toLowerCase().includes('informatie'));
+                if (!infoTab) return;
+                e.preventDefault();
+                infoTab.click();
+                infoTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            if (e.key === 'w' || e.key === 'W') {
+                const crumbLinks = [...document.querySelectorAll('li.breadcrumb-item a[href]')];
+                if (crumbLinks.length < 2) return;
+                e.preventDefault();
+                window.location.href = crumbLinks[crumbLinks.length - 2].href;
+            }
+        });
+    }
+
+    /**
+     * Experimental features: smart sort/stock defaults + Z+click cascade filter.
+     *
+     * Sort default (pasc): only applied when the URL has no explicit ?sort= param,
+     * meaning the user hasn't chosen a sort order themselves.
+     *
+     * Stock default (ss=1, direct leverbaar): only applied when the URL has no
+     * explicit ?ss= param.
+     *
+     * Z+click cascade: holding Z while clicking a filter checkbox also checks all
+     * sibling checkboxes that appear below it in the same filter group (including
+     * hidden ones), without triggering a form submit on each intermediate checkbox.
      */
     function experimentalFeatures() {
         const isEnabled = currentSettings.enableExperimentalFeatures.value;
@@ -1050,42 +1111,93 @@
         if (document.body.hasAttribute(ACTIVE_ATTR)) return;
         document.body.setAttribute(ACTIVE_ATTR, '1');
 
-        // --- 1. Keyboard shortcuts for product page tabs ---
-        // S → Specificaties, A → Informatie (or first info tab found)
+        const sortSelect = document.querySelector('select#sort');
+        const params = new URLSearchParams(window.location.search);
+
+        // --- 1. Default sort: pasc (price ascending) ---
+        // Only applied when no ?sort= param is present — user hasn't chosen one yet.
+        if (sortSelect && !params.has('sort')) {
+            sortSelect.value = 'pasc';
+        }
+
+        // --- 2. Default stock filter: ss=1 (direct leverbaar) ---
+        // Only applied when no ?ss= param is present in the URL.
+        if (!params.has('ss')) {
+            const directRadio = document.getElementById('ss_direct');
+            if (directRadio && !directRadio.checked) {
+                directRadio.checked = true;
+            }
+        }
+
+        // --- 3. Z+click: select clicked filter AND all below it in the same group ---
+        // Finds all label.form-check siblings in the same filter group (article.filter-group),
+        // in DOM order (smallest → largest). Checks every checkbox from the clicked one
+        // downward, including hidden ones. Does not fire intermediate change/click events
+        // so the form doesn't auto-submit on each one.
+        let zHeld = false;
         document.addEventListener('keydown', (e) => {
-            if (!currentSettings.enableExperimentalFeatures.value) return;
-            if (e.target.matches('input, textarea, select, [contenteditable]')) return;
-            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (e.key === 'z' || e.key === 'Z') zHeld = true;
 
-            if (e.key === 's' || e.key === 'S') {
-                const tab = document.querySelector('a[data-bs-target="#tab_specs"]');
-                if (!tab) return;
-                e.preventDefault();
-                tab.click();
-                tab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                // Trigger confetti if the specs confetti setting is on.
-                if (currentSettings.enableSpecsConfetti?.value) spawnSpecsConfetti();
-            }
-
-            if (e.key === 'a' || e.key === 'A') {
-                // Find the Informatie tab by its visible label text.
-                const tabs = document.querySelectorAll('a[data-bs-toggle="tab"], a[data-bs-toggle="pill"]');
-                const infoTab = [...tabs].find(t => t.textContent.trim().toLowerCase().includes('informatie'));
-                if (!infoTab) return;
-                e.preventDefault();
-                infoTab.click();
-                infoTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-
-            if (e.key === 'w' || e.key === 'W') {
-                // Navigate to the parent category — the second-to-last breadcrumb link.
-                // The last link is the current page's own category, so we step one further back.
-                const crumbLinks = [...document.querySelectorAll('li.breadcrumb-item a[href]')];
-                if (crumbLinks.length < 2) return;
-                e.preventDefault();
-                window.location.href = crumbLinks[crumbLinks.length - 2].href;
+            // Enter always triggers the "Filters toepassen" button if it exists,
+            // so colleagues don't have to click it after Z+selecting filters.
+            if (e.key === 'Enter') {
+                const applyBtn = document.getElementById('iq-tweaks-apply-button');
+                if (applyBtn) {
+                    e.preventDefault();
+                    applyBtn.click();
+                }
             }
         });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'z' || e.key === 'Z') zHeld = false;
+        });
+
+            document.addEventListener('click', (e) => {
+                if (!zHeld) return;
+                if (!currentSettings.enableExperimentalFeatures.value) return;
+
+                // Find the checkbox that was clicked (either directly or via its label).
+                let checkbox = null;
+                if (e.target.matches('input.form-check-input[type="checkbox"]')) {
+                    checkbox = e.target;
+                } else if (e.target.closest('label.form-check')) {
+                    checkbox = e.target.closest('label.form-check')
+                    .querySelector('input.form-check-input[type="checkbox"]');
+                }
+                if (!checkbox) return;
+
+                // Find the enclosing filter group article.
+                const article = checkbox.closest('article.filter-group');
+                if (!article) return;
+
+                // Get all filter labels in this group, in DOM order (smallest → largest).
+                const allLabels = [...article.querySelectorAll('label.form-check')];
+                const clickedLabel = checkbox.closest('label.form-check');
+                const clickedIndex = allLabels.indexOf(clickedLabel);
+                if (clickedIndex === -1) return;
+
+                // Because this is a capturing listener, checkbox.checked reflects the state
+                // BEFORE the browser processes the click. Use this to determine direction:
+                //   currently unchecked → user is enabling → check everything below (inclusive)
+                //   currently checked   → user is disabling → uncheck everything above (exclusive)
+                // Z+click always means "make this the lowest selected point":
+                // - check the clicked checkbox and everything below it
+                // - uncheck everything above it
+                // preventDefault stops the browser from toggling the clicked checkbox
+                // so we can set it explicitly ourselves.
+                e.preventDefault();
+
+                allLabels.forEach((label, i) => {
+                    const cb = label.querySelector('input.form-check-input[type="checkbox"]');
+                    if (!cb) return;
+                    cb.checked = (i >= clickedIndex);
+                });
+
+                // Notify the animation system that filters changed, so the apply button
+                // highlights if enableFilterApplyButtonAnimation is on.
+                const applyBtn = document.getElementById('iq-tweaks-apply-button');
+                if (applyBtn) applyBtn.classList.add('needs-refresh');
+            }, true); // useCapture so we run before the site's own onclick handler
     }
 
     // --- Easter Egg helpers ---
