@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.21.3
+// @version      0.21.4
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -72,7 +72,7 @@
  enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
  enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
  enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
- enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie." },
+ enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
  enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Experimentele functies: standaard sortering op prijs oplopend, standaard filter op direct leverbaar, Z+klik om filter en alle opties eronder te selecteren." },
     };
 
@@ -1048,6 +1048,10 @@
      * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
      * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
      * are discoverable. Removed again when the feature is disabled.
+     * 
+     *      * Z+click cascade: holding Z while clicking a filter checkbox also checks all
+     * sibling checkboxes that appear below it in the same filter group (including
+     * hidden ones), without triggering a form submit on each intermediate checkbox.
      */
     function keyboardShortcuts() {
         const isEnabled = currentSettings.enableKeyboardShortcuts.value;
@@ -1118,50 +1122,6 @@
                 window.location.href = crumbLinks[crumbLinks.length - 2].href;
             }
         });
-    }
-
-    /**
-     * Experimental features: smart sort/stock defaults + Z+click cascade filter.
-     *
-     * Sort default (pasc): only applied when the URL has no explicit ?sort= param,
-     * meaning the user hasn't chosen a sort order themselves.
-     *
-     * Stock default (ss=1, direct leverbaar): only applied when the URL has no
-     * explicit ?ss= param.
-     *
-     * Z+click cascade: holding Z while clicking a filter checkbox also checks all
-     * sibling checkboxes that appear below it in the same filter group (including
-     * hidden ones), without triggering a form submit on each intermediate checkbox.
-     */
-    function experimentalFeatures() {
-        const isEnabled = currentSettings.enableExperimentalFeatures.value;
-        const ACTIVE_ATTR = 'data-iq-tweaks-experimental-active';
-
-        if (!isEnabled) {
-            document.body.removeAttribute(ACTIVE_ATTR);
-            return;
-        }
-
-        if (document.body.hasAttribute(ACTIVE_ATTR)) return;
-        document.body.setAttribute(ACTIVE_ATTR, '1');
-
-        const sortSelect = document.querySelector('select#sort');
-        const params = new URLSearchParams(window.location.search);
-
-        // --- 1. Default sort: pasc (price ascending) ---
-        // Only applied when no ?sort= param is present — user hasn't chosen one yet.
-        if (sortSelect && !params.has('sort')) {
-            sortSelect.value = 'pasc';
-        }
-
-        // --- 2. Default stock filter: ss=1 (direct leverbaar) ---
-        // Only applied when no ?ss= param is present in the URL.
-        if (!params.has('ss')) {
-            const directRadio = document.getElementById('ss_direct');
-            if (directRadio && !directRadio.checked) {
-                directRadio.checked = true;
-            }
-        }
 
         // --- 3. Z+click: select clicked filter AND all below it in the same group ---
         // Finds all label.form-check siblings in the same filter group (article.filter-group),
@@ -1188,7 +1148,7 @@
 
             document.addEventListener('click', (e) => {
                 if (!zHeld) return;
-                if (!currentSettings.enableExperimentalFeatures.value) return;
+                if (!currentSettings.enableKeyboardShortcuts.value) return;
 
                 // Find the checkbox that was clicked (either directly or via its label).
                 let checkbox = null;
@@ -1232,6 +1192,47 @@
                 const applyBtn = document.getElementById('iq-tweaks-apply-button');
                 if (applyBtn) applyBtn.classList.add('needs-refresh');
             }, true); // useCapture so we run before the site's own onclick handler
+    }
+
+    /**
+     * Experimental features: smart sort/stock defaults + Z+click cascade filter.
+     *
+     * Sort default (pasc): only applied when the URL has no explicit ?sort= param,
+     * meaning the user hasn't chosen a sort order themselves.
+     *
+     * Stock default (ss=1, direct leverbaar): only applied when the URL has no
+     * explicit ?ss= param.
+     *
+     */
+    function experimentalFeatures() {
+        const isEnabled = currentSettings.enableExperimentalFeatures.value;
+        const ACTIVE_ATTR = 'data-iq-tweaks-experimental-active';
+
+        if (!isEnabled) {
+            document.body.removeAttribute(ACTIVE_ATTR);
+            return;
+        }
+
+        if (document.body.hasAttribute(ACTIVE_ATTR)) return;
+        document.body.setAttribute(ACTIVE_ATTR, '1');
+
+        const sortSelect = document.querySelector('select#sort');
+        const params = new URLSearchParams(window.location.search);
+
+        // --- 1. Default sort: pasc (price ascending) ---
+        // Only applied when no ?sort= param is present — user hasn't chosen one yet.
+        if (sortSelect && !params.has('sort')) {
+            sortSelect.value = 'pasc';
+        }
+
+        // --- 2. Default stock filter: ss=1 (direct leverbaar) ---
+        // Only applied when no ?ss= param is present in the URL.
+        if (!params.has('ss')) {
+            const directRadio = document.getElementById('ss_direct');
+            if (directRadio && !directRadio.checked) {
+                directRadio.checked = true;
+            }
+        }
     }
 
     // --- Easter Egg helpers ---
