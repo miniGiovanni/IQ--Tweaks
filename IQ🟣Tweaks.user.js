@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.21.5
+// @version      0.24.2
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.21.5"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.24.2"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -73,7 +73,31 @@
  enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
  enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
  enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
- enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Experimentele functies: standaard sortering op prijs oplopend, standaard filter op direct leverbaar." },
+ defaultSort: {
+     type: 'select',
+     value: 'pop',
+     title: "Standaard sortering",
+     description: "De standaard sorteervolgorde op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
+     options: [
+         { label: 'Populariteit',        value: 'pop'   },
+         { label: 'Prijs (oplopend)',     value: 'pasc'  },
+ { label: 'Prijs (aflopend)',     value: 'pdesc' },
+ { label: 'Merk (oplopend)',      value: 'vasc'  },
+ { label: 'Merk (aflopend)',      value: 'vdesc' },
+     ],
+ },
+ defaultAvailability: {
+     type: 'select',
+     value: 'ss2',
+     title: "Standaard beschikbaarheid",
+     description: "De standaard beschikbaarheidsfilter op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
+     options: [
+         { label: 'Alles',             value: 'ss0' },
+         { label: 'Snel leverbaar',    value: 'ss2' },
+         { label: 'Direct leverbaar',  value: 'ss1' },
+     ],
+ },
+ enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakel experimentele functies in. Er zijn momenteel geen experimentele functies actief." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -82,16 +106,18 @@
     // Linking a feature to a certain function, which apply (or remove) the feature.
     const featureApplicationMap = {
         enableSpecialLogo: specialLogo,
-        enableFilterApplyButton: filterFix,
-        enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
-        enableArticleNumberToMorePlaces: articleNumberAddition,
-        enableStockInformationIconFix: stockInformationIconFix,
-        enableContentFeatures: contentFeatures,
-        enableEanTweakersSearch: eanTweakersSearch,
-        enableFunFeatures: funFeatures,
-        enableSpecsConfetti: specsConfetti,
-        enableKeyboardShortcuts: keyboardShortcuts,
-        enableExperimentalFeatures: experimentalFeatures,
+ enableFilterApplyButton: filterFix,
+ enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
+ enableArticleNumberToMorePlaces: articleNumberAddition,
+ enableStockInformationIconFix: stockInformationIconFix,
+ enableContentFeatures: contentFeatures,
+ enableEanTweakersSearch: eanTweakersSearch,
+ enableFunFeatures: funFeatures,
+ enableSpecsConfetti: specsConfetti,
+ enableKeyboardShortcuts: keyboardShortcuts,
+ defaultSort: categoryLinkDefaults,
+     defaultAvailability: categoryLinkDefaults,
+         enableExperimentalFeatures: experimentalFeatures,
     };
 
     // Map to store references to dynamically created event listeners for cleanup.
@@ -164,10 +190,14 @@
             Object.keys(defaultSettings).map(key => {
                 const entry = { ...defaultSettings[key] };
                 if (Object.prototype.hasOwnProperty.call(savedSettings, key)) {
-                    // savedSettings stores bare booleans (current format from saveSettings()).
-                    // Handle the legacy format too, where the value was a {value: bool} object.
                     const saved = savedSettings[key];
-                    entry.value = typeof saved === 'boolean' ? saved : saved.value;
+                    // Saved values are stored as primitives (boolean or string).
+                    // Handle legacy format too, where the value was a {value: ...} object.
+                    if (typeof saved === 'boolean' || typeof saved === 'string') {
+                        entry.value = saved;
+                    } else if (saved && typeof saved === 'object') {
+                        entry.value = saved.value;
+                    }
                 }
                 return [key, entry];
             })
@@ -748,6 +778,18 @@
             font-size: 0.75em; opacity: 0.5; margin-left: 2px;
             font-weight: normal; letter-spacing: 0;
         }
+        /* --- Select dropdowns in panel --- */
+        .${SCRIPT_PREFIX}feature-item-select {
+            flex-wrap: wrap; gap: 4px;
+        }
+        .${SCRIPT_PREFIX}feature-item-select .${SCRIPT_PREFIX}feature-label-and-qmark {
+            flex-grow: 1;
+        }
+        .${SCRIPT_PREFIX}feature-select {
+            font-size: 0.85em; padding: 2px 4px; border-radius: 4px;
+            border: 1px solid ${panelBorderColor}; background: #fff;
+            color: #495057; cursor: pointer; max-width: 140px;
+        }
         /* --- EAN Tweakers Search --- */
         .iq-tweaks-ean-tweakers-link {
             display: inline-flex; align-items: center;
@@ -815,11 +857,14 @@
         globalTooltip.id = SCRIPT_PREFIX + 'global-tooltip';
         document.body.appendChild(globalTooltip);
 
-        // Populate the panel with toggles for each feature.
+        // Populate the panel with controls for each feature.
         for (const featureKey in defaultSettings) {
             const feature = currentSettings[featureKey];
+            const isSelect = feature.type === 'select';
+
             const itemDiv = document.createElement('div');
             itemDiv.className = `${SCRIPT_PREFIX}feature-item`;
+            if (isSelect) itemDiv.classList.add(`${SCRIPT_PREFIX}feature-item-select`);
 
             // Left side: Help icon and label
             const labelContainer = document.createElement('div');
@@ -836,26 +881,48 @@
             featureLabel.textContent = feature.title;
 
             labelContainer.append(qMark, featureLabel);
+            itemDiv.appendChild(labelContainer);
 
-            // Right side: Toggle switch
-            const switchLabel = document.createElement('label');
-            switchLabel.className = `${SCRIPT_PREFIX}switch`;
+            if (isSelect) {
+                // Right side: dropdown <select>
+                const select = document.createElement('select');
+                select.id = SCRIPT_PREFIX + featureKey;
+                select.className = `${SCRIPT_PREFIX}feature-select`;
+                feature.options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    if (opt.value === feature.value) option.selected = true;
+                    select.appendChild(option);
+                });
+                select.addEventListener('change', (e) => {
+                    currentSettings[featureKey].value = e.target.value;
+                    saveSettings();
+                    applyAllFeatures();
+                });
+                itemDiv.appendChild(select);
+            } else {
+                // Right side: toggle switch
+                const switchLabel = document.createElement('label');
+                switchLabel.className = `${SCRIPT_PREFIX}switch`;
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = SCRIPT_PREFIX + featureKey;
-            checkbox.checked = feature.value;
-            checkbox.addEventListener('change', (e) => {
-                currentSettings[featureKey].value = e.target.checked;
-                saveSettings();
-                applyAllFeatures();
-            });
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = SCRIPT_PREFIX + featureKey;
+                checkbox.checked = feature.value;
+                checkbox.addEventListener('change', (e) => {
+                    currentSettings[featureKey].value = e.target.checked;
+                    saveSettings();
+                    applyAllFeatures();
+                });
 
-            const sliderSpan = document.createElement('span');
-            sliderSpan.className = `${SCRIPT_PREFIX}slider round`;
+                const sliderSpan = document.createElement('span');
+                sliderSpan.className = `${SCRIPT_PREFIX}slider round`;
 
-            switchLabel.append(checkbox, sliderSpan);
-            itemDiv.append(labelContainer, switchLabel);
+                switchLabel.append(checkbox, sliderSpan);
+                itemDiv.appendChild(switchLabel);
+            }
+
             panel.appendChild(itemDiv);
         }
 
@@ -938,9 +1005,12 @@
         if (!panel) return;
 
         for (const featureKey in currentSettings) {
-            const checkbox = document.getElementById(SCRIPT_PREFIX + featureKey);
-            if (checkbox) {
-                checkbox.checked = currentSettings[featureKey].value;
+            const el = document.getElementById(SCRIPT_PREFIX + featureKey);
+            if (!el) continue;
+            if (el.tagName === 'SELECT') {
+                el.value = currentSettings[featureKey].value;
+            } else {
+                el.checked = currentSettings[featureKey].value;
             }
         }
     }
@@ -1188,43 +1258,119 @@
     }
 
     /**
-     * Experimental features: smart sort/stock defaults.
-     *
-     * Sort default (pasc): only applied when the URL has no explicit ?sort= param,
-     * meaning the user hasn't chosen a sort order themselves.
-     *
-     * Stock default (ss=1, direct leverbaar): only applied when the URL has no
-     * explicit ?ss= param.
+     * Staging area for features under development.
+     * Toggle this on to gather user feedback before promoting a feature to a permanent setting.
+     * Currently empty — no experimental features are active.
      */
     function experimentalFeatures() {
-        const isEnabled = currentSettings.enableExperimentalFeatures.value;
-        const ACTIVE_ATTR = 'data-iq-tweaks-experimental-active';
+        // const isEnabled = currentSettings.enableExperimentalFeatures.value;
+        // if (!isEnabled) return;
+        // --- future experimental features go here ---
+    }
 
-        if (!isEnabled) {
-            document.body.removeAttribute(ACTIVE_ATTR);
-            return;
-        }
+    /**
+     * Rewrites category links sitewide to the canonical URL format (?m=ART&g=N),
+     * appending the user's chosen sort and availability defaults if not already present.
+     *
+     * Handles both link formats:
+     *   - Pretty path: /laptops_en_tablets/laptops/c006-h046-g095/
+     *   - Canonical:   /?m=art&g=534  (case-insensitive)
+     *
+     * A MutationObserver ensures dynamically added links are rewritten too.
+     * Always active — controlled entirely by the defaultSort and defaultAvailability settings.
+     */
+    function categoryLinkDefaults() {
+        const ACTIVE_ATTR = 'data-iq-tweaks-link-defaults-active';
+
+        // Rewrite all existing category links on the page.
+        rewriteCategoryLinks();
 
         if (document.body.hasAttribute(ACTIVE_ATTR)) return;
         document.body.setAttribute(ACTIVE_ATTR, '1');
 
-        const sortSelect = document.querySelector('select#sort');
-        const params = new URLSearchParams(window.location.search);
+        // Watch for new links added dynamically and rewrite those too.
+        const observer = new MutationObserver(() => rewriteCategoryLinks());
+        observer.observe(document.body, { childList: true, subtree: true });
+        document.body._iqTweaksLinkDefaultsObserver = observer;
+    }
 
-        // --- 1. Default sort: pasc (price ascending) ---
-        // Only applied when no ?sort= param is present — user hasn't chosen one yet.
-        if (sortSelect && !params.has('sort')) {
-            sortSelect.value = 'pasc';
-        }
+    /**
+     * Finds all <a> elements whose href matches the pretty category URL pattern
+     * (e.g. /path/c001-h046-g095/) and rewrites them to the canonical form
+     * (?m=ART&g=95) with experimental defaults appended.
+     *
+     * Already-rewritten links are skipped via a data attribute guard.
+     */
+    function rewriteCategoryLinks() {
+        // Matches paths ending in a segment containing gNNN, e.g. /c006-h046-g095/
+        const PRETTY_URL_RE = /\bg(\d+)\b[^/]*\/$/;
 
-        // --- 2. Default stock filter: ss=1 (direct leverbaar) ---
-        // Only applied when no ?ss= param is present in the URL.
-        if (!params.has('ss')) {
-            const directRadio = document.getElementById('ss_direct');
-            if (directRadio && !directRadio.checked) {
-                directRadio.checked = true;
+        // Clear previous rewrites so updated sort/availability settings are applied.
+        document.querySelectorAll('a[data-iq-tweaks-rewritten]').forEach(link => {
+            delete link.dataset.iqTweaksRewritten;
+        });
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            if (link.dataset.iqTweaksRewritten) return;
+
+            const url = new URL(link.href, window.location.origin);
+            const urlParams = new URLSearchParams(url.search);
+
+            // Case 1: pretty URL path — e.g. /laptops/c006-h046-g095/
+            const prettyMatch = url.pathname.match(PRETTY_URL_RE);
+            if (prettyMatch) {
+                const groupNumber = parseInt(prettyMatch[1], 10);
+                const params = new URLSearchParams();
+                params.set('m', 'ART');
+                params.set('g', groupNumber);
+                applyExperimentalParams(params);
+                link.href = `${window.location.origin}/?${params.toString()}`;
+                link.dataset.iqTweaksRewritten = '1';
+                return;
+            }
+
+            // Case 2: canonical URL — e.g. /?m=art&g=534 (case-insensitive m check)
+            const mParam = urlParams.get('m');
+            const gParam = urlParams.get('g');
+            if (mParam && mParam.toLowerCase() === 'art' && gParam) {
+                applyExperimentalParams(urlParams);
+                link.href = `${url.origin}/?${urlParams.toString()}`;
+                link.dataset.iqTweaksRewritten = '1';
+            }
+        });
+    }
+
+    /**
+     * Appends experimental default params to the given URLSearchParams if not already present.
+     * Reads sort and availability values from currentSettings.
+     * Mutates the params object in place.
+     * @param {URLSearchParams} params
+     * @returns {boolean} true if any params were added
+     */
+    function applyExperimentalParams(params) {
+        let changed = false;
+
+        // Default sort — value is e.g. 'pasc', 'pop', 'pdesc' etc.
+        if (!params.has('sort')) {
+            const sortValue = currentSettings.defaultSort?.value;
+            if (sortValue) {
+                params.set('sort', sortValue);
+                changed = true;
             }
         }
+
+        // Default availability — value is stored as 'ss0', 'ss1', 'ss2';
+        // strip the 'ss' prefix to get the actual param value.
+        if (!params.has('ss')) {
+            const ssRaw = currentSettings.defaultAvailability?.value;
+            if (ssRaw) {
+                const ssValue = ssRaw.replace('ss', '');
+                params.set('ss', ssValue);
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     // --- Easter Egg helpers ---
