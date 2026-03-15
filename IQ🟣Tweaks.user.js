@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.21.4
+// @version      0.21.5
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.21.4"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.21.5"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -73,7 +73,7 @@
  enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
  enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
  enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
- enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Experimentele functies: standaard sortering op prijs oplopend, standaard filter op direct leverbaar, Z+klik om filter en alle opties eronder te selecteren." },
+ enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Experimentele functies: standaard sortering op prijs oplopend, standaard filter op direct leverbaar." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -105,9 +105,6 @@
         initialize();
     }
 
-    /**
-     * Main entry point for the script. Runs after the rest of the page has loaded.
-     */
     /**
      * Injects the IQ🟣Tweaks banner as comment nodes at the top of <html>,
      * visible in the Elements panel. Runs once from initialize() — never from funFeatures.
@@ -1047,12 +1044,15 @@
      * Toggles keyboard shortcut features for product pages.
      * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
      * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
-     * are discoverable. Removed again when the feature is disabled.
-     * 
-     *      * Z+click cascade: holding Z while clicking a filter checkbox also checks all
-     * sibling checkboxes that appear below it in the same filter group (including
-     * hidden ones), without triggering a form submit on each intermediate checkbox.
-     */
+     / ***
+     * Toggles keyboard shortcut features for product pages.
+     * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
+     * Z+click → select clicked filter and all options below it in the same group.
+     * Enter → submit the filter form ("Filters toepassen").
+*
+* When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
+* are discoverable. Removed again when the feature is disabled.
+*/
     function keyboardShortcuts() {
         const isEnabled = currentSettings.enableKeyboardShortcuts.value;
         const ACTIVE_ATTR = 'data-iq-tweaks-keyboard-active';
@@ -1170,15 +1170,9 @@
                 const clickedIndex = allLabels.indexOf(clickedLabel);
                 if (clickedIndex === -1) return;
 
-                // Because this is a capturing listener, checkbox.checked reflects the state
-                // BEFORE the browser processes the click. Use this to determine direction:
-                //   currently unchecked → user is enabling → check everything below (inclusive)
-                //   currently checked   → user is disabling → uncheck everything above (exclusive)
                 // Z+click always means "make this the lowest selected point":
-                // - check the clicked checkbox and everything below it
-                // - uncheck everything above it
-                // preventDefault stops the browser from toggling the clicked checkbox
-                // so we can set it explicitly ourselves.
+                // check the clicked checkbox and everything below it, uncheck everything above.
+                // preventDefault stops the browser from toggling the checkbox so we set it ourselves.
                 e.preventDefault();
 
                 allLabels.forEach((label, i) => {
@@ -1187,22 +1181,20 @@
                     cb.checked = (i >= clickedIndex);
                 });
 
-                // Notify the animation system that filters changed, so the apply button
-                // highlights if enableFilterApplyButtonAnimation is on.
+                // Notify the animation system so the apply button highlights if animation is on.
                 const applyBtn = document.getElementById('iq-tweaks-apply-button');
                 if (applyBtn) applyBtn.classList.add('needs-refresh');
             }, true); // useCapture so we run before the site's own onclick handler
     }
 
     /**
-     * Experimental features: smart sort/stock defaults + Z+click cascade filter.
+     * Experimental features: smart sort/stock defaults.
      *
      * Sort default (pasc): only applied when the URL has no explicit ?sort= param,
      * meaning the user hasn't chosen a sort order themselves.
      *
      * Stock default (ss=1, direct leverbaar): only applied when the URL has no
      * explicit ?ss= param.
-     *
      */
     function experimentalFeatures() {
         const isEnabled = currentSettings.enableExperimentalFeatures.value;
