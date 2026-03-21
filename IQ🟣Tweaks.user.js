@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.24.3
+// @version      0.24.4
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.24.3"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.24.4"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -606,7 +606,8 @@
     }
 
     /**
-     * Adds a clickable Tweakers favicon link next to the EAN code on a product page.
+     * Adds a clickable Tweakers favicon link next to the EAN code on a product page,
+     * with a spacer <span> </span> inserted between the EAN and the icon.
      */
     function eanTweakersSearch() {
         const isEnabled = currentSettings.enableEanTweakersSearch.value;
@@ -631,6 +632,13 @@
         const ean = eanSpan.textContent.trim();
         if (!ean) return;
 
+        // Create spacer span with a single space
+        const spacer = document.createElement('span');
+        spacer.textContent = ' '; // <span> </span>
+        // Optional: add a class if you want to target it with CSS later
+        // spacer.className = 'iq-tweaks-ean-spacer';
+
+        // Create the Tweakers link + icon
         const link = document.createElement('a');
         link.href = `https://tweakers.net/zoeken/?keyword=${encodeURIComponent(ean)}`;
         link.target = '_blank';
@@ -643,7 +651,10 @@
         icon.alt = 'Tweakers';
 
         link.appendChild(icon);
-        eanSpan.after(link);
+
+        // Insert spacer after EAN, then link after the spacer
+        eanSpan.insertAdjacentElement('afterend', spacer);
+        spacer.insertAdjacentElement('afterend', link);
     }
 
     /**
