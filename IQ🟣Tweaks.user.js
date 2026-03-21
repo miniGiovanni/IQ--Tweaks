@@ -606,7 +606,8 @@
     }
 
     /**
-     * Adds a clickable Tweakers favicon link next to the EAN code on a product page.
+     * Adds a clickable Tweakers favicon link next to the EAN code on a product page,
+     * with a spacer <span> </span> inserted between the EAN and the icon.
      */
     function eanTweakersSearch() {
         const isEnabled = currentSettings.enableEanTweakersSearch.value;
@@ -631,6 +632,13 @@
         const ean = eanSpan.textContent.trim();
         if (!ean) return;
 
+        // Create spacer span with a single space
+        const spacer = document.createElement('span');
+        spacer.textContent = ' '; // <span> </span>
+        // Optional: add a class if you want to target it with CSS later
+        // spacer.className = 'iq-tweaks-ean-spacer';
+
+        // Create the Tweakers link + icon
         const link = document.createElement('a');
         link.href = `https://tweakers.net/zoeken/?keyword=${encodeURIComponent(ean)}`;
         link.target = '_blank';
@@ -643,7 +651,10 @@
         icon.alt = 'Tweakers';
 
         link.appendChild(icon);
-        eanSpan.after(link);
+
+        // Insert spacer after EAN, then link after the spacer
+        eanSpan.insertAdjacentElement('afterend', spacer);
+        spacer.insertAdjacentElement('afterend', link);
     }
 
     /**
