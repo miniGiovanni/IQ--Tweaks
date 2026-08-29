@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.24.4
+// @version      0.25.1
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -164,6 +164,7 @@
         addCredits();
         injectElementsBanner();
         createControlPanel();
+        replaceFavicon();
         applyAllFeatures();
 
         // Add a listener, which changes from other tabs are acted upon.
@@ -1728,5 +1729,19 @@
             const firstITag = targetElement.querySelector('i');
             firstITag ? targetElement.insertBefore(span, firstITag) : targetElement.appendChild(span);
         });
+    }
+
+    function replaceFavicon() {
+        const CUSTOM_FAVICON =
+            'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico';
+
+        document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
+
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.type = 'image/x-icon';
+        link.href = CUSTOM_FAVICON;
+
+        document.head.appendChild(link);
     }
 })();
