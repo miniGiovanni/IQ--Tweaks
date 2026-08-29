@@ -842,7 +842,7 @@
      * Creates the control panel UI and injects it into the page footer.
      */
     function createControlPanel() {
-        const targetFooterSection = document.querySelector('section.footer-bottom');
+        const targetFooterSection = document.querySelector('.footer-2026-bottom .footer-2026-bottom-inner');
         if (!targetFooterSection) {
             console.warn('IQ🟣Tweaks: Target footer section not found. Control panel will not be added.');
             return;
@@ -939,6 +939,7 @@
 
         const bugReportText = document.createElement('p');
         bugReportText.id = SCRIPT_PREFIX + 'bug-report-text';
+        bugReportText.style.color = 'black';
         bugReportText.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} - Heb je een bug gevonden? Druk op deze knop om belangrijke info te kopiëren en stuur een email.`;
 
         const copyBugInfoButton = document.createElement('button');
