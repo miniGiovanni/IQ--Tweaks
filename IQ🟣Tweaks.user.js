@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.24.3
+// @version      0.25.5
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -58,7 +58,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.24.3"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.25.5"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -68,36 +68,41 @@
         enableFilterApplyButtonAnimation: { value: true, title: "Animatie voor filterknop", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
         enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
         enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
- enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
- enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
- enableFunFeatures: { value: false, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
- enableSpecsConfetti: { value: true, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
- enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
- defaultSort: {
-     type: 'select',
-     value: 'pop',
-     title: "Standaard sortering",
-     description: "De standaard sorteervolgorde op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
-     options: [
-         { label: 'Populariteit',        value: 'pop'   },
-         { label: 'Prijs (oplopend)',     value: 'pasc'  },
- { label: 'Prijs (aflopend)',     value: 'pdesc' },
- { label: 'Merk (oplopend)',      value: 'vasc'  },
- { label: 'Merk (aflopend)',      value: 'vdesc' },
-     ],
- },
- defaultAvailability: {
-     type: 'select',
-     value: 'ss2',
-     title: "Standaard beschikbaarheid",
-     description: "De standaard beschikbaarheidsfilter op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
-     options: [
-         { label: 'Alles',             value: 'ss0' },
-         { label: 'Snel leverbaar',    value: 'ss2' },
-         { label: 'Direct leverbaar',  value: 'ss1' },
-     ],
- },
- enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakel experimentele functies in. Er zijn momenteel geen experimentele functies actief." },
+        enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
+        enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
+        enableFunFeatures: { value: true, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
+        enableSpecsConfetti: { value: false, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
+        enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
+        enableDarkMode: {
+            value: false,
+            title: "🌙 Dark Mode",
+            description: "Donkere modus voor Informatique."
+        },
+        defaultSort: {
+            type: 'select',
+            value: 'pop',
+            title: "Standaard sortering",
+            description: "De standaard sorteervolgorde op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
+            options: [
+                { label: 'Populariteit',        value: 'pop'   },
+                { label: 'Prijs (oplopend)',     value: 'pasc'  },
+        { label: 'Prijs (aflopend)',     value: 'pdesc' },
+        { label: 'Merk (oplopend)',      value: 'vasc'  },
+        { label: 'Merk (aflopend)',      value: 'vdesc' },
+            ],
+        },
+        defaultAvailability: {
+            type: 'select',
+            value: 'ss2',
+            title: "Standaard beschikbaarheid",
+            description: "De standaard beschikbaarheidsfilter op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
+            options: [
+                { label: 'Alles',             value: 'ss0' },
+                { label: 'Snel leverbaar',    value: 'ss2' },
+                { label: 'Direct leverbaar',  value: 'ss1' },
+            ],
+        },
+        enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakel experimentele functies in. Er zijn momenteel geen experimentele functies actief." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -106,18 +111,19 @@
     // Linking a feature to a certain function, which apply (or remove) the feature.
     const featureApplicationMap = {
         enableSpecialLogo: specialLogo,
- enableFilterApplyButton: filterFix,
- enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
- enableArticleNumberToMorePlaces: articleNumberAddition,
- enableStockInformationIconFix: stockInformationIconFix,
- enableContentFeatures: contentFeatures,
- enableEanTweakersSearch: eanTweakersSearch,
- enableFunFeatures: funFeatures,
- enableSpecsConfetti: specsConfetti,
- enableKeyboardShortcuts: keyboardShortcuts,
- defaultSort: categoryLinkDefaults,
-     defaultAvailability: categoryLinkDefaults,
-         enableExperimentalFeatures: experimentalFeatures,
+        enableFilterApplyButton: filterFix,
+        enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
+        enableArticleNumberToMorePlaces: articleNumberAddition,
+        enableStockInformationIconFix: stockInformationIconFix,
+        enableContentFeatures: contentFeatures,
+        enableEanTweakersSearch: eanTweakersSearch,
+        enableFunFeatures: funFeatures,
+        enableSpecsConfetti: specsConfetti,
+        enableKeyboardShortcuts: keyboardShortcuts,
+        defaultSort: categoryLinkDefaults,
+        defaultAvailability: categoryLinkDefaults,
+        enableDarkMode: darkMode,
+        enableExperimentalFeatures: experimentalFeatures,
     };
 
     // Map to store references to dynamically created event listeners for cleanup.
@@ -164,6 +170,7 @@
         addCredits();
         injectElementsBanner();
         createControlPanel();
+        replaceFavicon();
         applyAllFeatures();
 
         // Add a listener, which changes from other tabs are acted upon.
@@ -239,6 +246,764 @@
         if (!logoElement) return;
 
         logoElement.src = currentSettings.enableSpecialLogo.value ? LGBT_LOGO_URL : ORIGINAL_LOGO_URL;
+    }
+
+    function darkMode() {
+        const STYLE_ID = 'iq-tweaks-dark-mode';
+
+        document.getElementById(STYLE_ID)?.remove();
+
+        if (!currentSettings.enableDarkMode.value) {
+            return;
+        }
+
+        // =========================================================================
+        // COLOR PALETTE — Update values here to re-theme dark mode
+        // =========================================================================
+        const palette = {
+
+            bg: '#05070a',
+            footerBg: '#05070a',
+
+            surface: '#10151d',
+            surfaceAlt: '#161d28',
+            surfaceLabel: '#192231',
+            surface2: '#1d2838',
+
+            control: '#202c3b',
+
+            hover: '#2b3c53',
+
+            border: '#273244',
+            borderStrong: '#34445b',
+
+            text: '#e4e8ee',
+            muted: '#8d99ac',
+            mutedLight: '#a4aebe',
+
+            accent: '#006bb6',
+            accentHover: '#0a84db',
+            badgeBg: '#374151',
+            placeholder: '#cbd5e1',
+            footerText: '#d1d5db',
+            white: '#ffffff',
+            dropdownBorder: '#334155',
+            link: '#7ec3ff',
+            linkHover: '#a8d8ff',
+            price: '#6ee7b7',
+            success: '#22c55e',
+            backdrop: 'rgba(0,0,0,.7)',
+        };
+
+        const style = document.createElement('style');
+        style.id = STYLE_ID;
+
+        style.textContent = `
+        :root {
+            --iq-bg: ${palette.bg};
+            --iq-footer-bg: ${palette.footerBg};
+            --iq-surface: ${palette.surface};
+            --iq-surface-alt: ${palette.surfaceAlt};
+            --iq-surface-label: ${palette.surfaceLabel};
+            --iq-surface2: ${palette.surface2};
+            --iq-control: ${palette.control};
+            --iq-hover: ${palette.hover};
+            --iq-badge-bg: ${palette.badgeBg};
+
+            --iq-text: ${palette.text};
+            --iq-muted: ${palette.muted};
+            --iq-muted-light: ${palette.mutedLight};
+            --iq-placeholder: ${palette.placeholder};
+            --iq-footer-text: ${palette.footerText};
+            --iq-white: ${palette.white};
+
+            --iq-border: ${palette.border};
+            --iq-border-strong: ${palette.borderStrong};
+            --iq-dropdown-border: ${palette.dropdownBorder};
+
+            --iq-accent: ${palette.accent};
+            --iq-accent-hover: ${palette.accentHover};
+            --iq-link: ${palette.link};
+            --iq-link-hover: ${palette.linkHover};
+            --iq-price: ${palette.price};
+            --iq-success: ${palette.success};
+            --iq-backdrop: ${palette.backdrop};
+        }
+
+        /* =====================================================================
+         * BASE & LAYOUT
+         * ===================================================================== */
+        html,
+        body {
+            background: var(--iq-bg) !important;
+            color: var(--iq-text) !important;
+        }
+
+        body *,
+        .card *,
+        .card-product-grid *,
+        .card-product-list *,
+        section *,
+        article * {
+            color: inherit;
+        }
+
+        p,
+        span,
+        strong,
+        small,
+        li,
+        dd,
+        dt,
+        td,
+        th,
+        h1, h2, h3, h4, h5, h6,
+        label,
+        article,
+        section,
+        .box,
+        .itemside,
+        .card-body,
+        .title,
+        .section-title,
+        .card-title,
+        .content-body,
+        .text-dark,
+        .color-1,
+        .color-2,
+        .text-secondary {
+            color: var(--iq-text) !important;
+        }
+
+        .text-muted {
+            color: var(--iq-muted-light) !important;
+        }
+
+        .bg-white,
+        .container.bg-white,
+        .card,
+        .card-product-grid,
+        .card-banner,
+        .card-banner .title,
+        [style*="background:#fff"],
+        [style*="background: #fff"],
+        [style*="background:white"],
+        [style*="background: white"] {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+        }
+
+        .container.bg-white.iq-min-height {
+            background: var(--iq-bg) !important;
+        }
+
+        .bg-light {
+            background: var(--iq-surface2) !important;
+        }
+
+        .card-header {
+            border-color: var(--iq-border-strong) !important;
+        }
+
+        .mix-blend-multiply {
+            mix-blend-mode: normal !important;
+        }
+
+        .img-wrap,
+        .img-wrap-productcard {
+            background: var(--iq-control) !important;
+        }
+
+        .header-2026-topbar {
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* =====================================================================
+         * LINKS, BUTTONS, BADGES & FORMS
+         * ===================================================================== */
+        a {
+            color: var(--iq-link) !important;
+        }
+
+        a:hover {
+            color: var(--iq-link-hover) !important;
+        }
+
+        input,
+        textarea,
+        select,
+        .form-control {
+            background: var(--iq-control) !important;
+            color: var(--iq-white) !important;
+            border-color: var(--iq-border-strong) !important;
+        }
+
+        .dropdown-menu {
+            background: var(--iq-surface) !important;
+            border-color: var(--iq-dropdown-border) !important;
+        }
+
+        .dropdown-item {
+            color: var(--iq-white) !important;
+        }
+
+        .dropdown-item:hover {
+            background: var(--iq-dropdown-border) !important;
+        }
+
+        .nav-tabs .nav-link,
+        .nav-pills .nav-link {
+            color: var(--iq-text) !important;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background: var(--iq-surface) !important;
+        }
+
+        .nav-tabs .nav-link.active,
+        .nav-pills .nav-link.active {
+            background: var(--iq-surface2) !important;
+            color: var(--iq-white) !important;
+            border-color: var(--iq-border-strong) !important;
+        }
+
+        .btn-light {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .btn-light:hover {
+            background: var(--iq-hover) !important;
+            color: var(--iq-white) !important;
+        }
+
+        .badge.bg-light,
+        .badge.bg-light.text-dark {
+            background: var(--iq-badge-bg) !important;
+            color: var(--iq-text) !important;
+        }
+
+        .badge.text-dark {
+            color: var(--iq-text) !important;
+        }
+
+        .btn-clr-basket,
+        .search_btn3 {
+            background: var(--iq-accent) !important;
+            border-color: var(--iq-accent) !important;
+            color: var(--iq-white) !important;
+        }
+
+        .btn-clr-basket:hover,
+        .search_btn3:hover {
+            background: var(--iq-accent-hover) !important;
+            border-color: var(--iq-accent-hover) !important;
+            color: var(--iq-white) !important;
+        }
+
+        .btn-clr-basket i {
+            color: var(--iq-white) !important;
+        }
+
+        /* Search */
+        .product_search_form,
+        .search_form_btn,
+        .product_search_form input,
+        .product_search_form .form-control {
+            background: var(--iq-surface2) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border-strong) !important;
+        }
+
+        .product_search_form input::placeholder {
+            color: var(--iq-placeholder) !important;
+        }
+
+        /* Pagination */
+        .pagination .page-link {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .pagination .page-link:hover {
+            background: var(--iq-hover) !important;
+            color: var(--iq-white) !important;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: var(--iq-accent) !important;
+            color: var(--iq-white) !important;
+            border-color: var(--iq-accent) !important;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            background: var(--iq-surface) !important;
+            color: var(--iq-muted) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        /* =====================================================================
+         * TABLES & CAROUSELS
+         * ===================================================================== */
+        .table {
+            --bs-table-bg: var(--iq-surface);
+            --bs-table-striped-bg: var(--iq-surface2);
+            --bs-table-hover-bg: var(--iq-hover);
+            --bs-table-color: var(--iq-text);
+            --bs-table-hover-color: var(--iq-white);
+            background: var(--iq-surface) !important;
+        }
+
+        .table th,
+        .table td {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .table-hover tbody tr:hover > * {
+            color: var(--iq-white) !important;
+            background-color: var(--iq-hover) !important;
+            box-shadow: inset 0 0 0 9999px var(--iq-hover) !important;
+        }
+
+        .table-success {
+            --bs-table-bg: var(--iq-surface) !important;
+            --bs-table-color: var(--iq-text) !important;
+        }
+
+        #mainCarousel,
+        #thumbCarousel,
+        .carousel__slide {
+            background: var(--iq-surface2) !important;
+            border-color: var(--iq-border-strong) !important;
+        }
+
+        /* =====================================================================
+         * IQ TWEAKS CONTROLS & PRODUCT BENEFITS
+         * ===================================================================== */
+        .iq-tweaks-credits {
+            color: inherit !important;
+            font-size: inherit !important;
+            opacity: 0.8;
+        }
+
+        #IQTweak_control-panel {
+        background: var(--iq-surface) !important;
+        border-color: var(--iq-border) !important;
+        color: var(--iq-text) !important;
+        }
+
+        #IQTweak_control-panel h3,
+        #IQTweak_control-panel label {
+        color: var(--iq-text) !important;
+        }
+
+        #IQTweak_control-panel h3 {
+        border-bottom-color: var(--iq-border) !important;
+        }
+
+        #IQTweak_control-panel select {
+        background: var(--iq-surface2) !important;
+        color: var(--iq-text) !important;
+        border-color: var(--iq-border-strong) !important;
+        }
+
+        #IQTweak_control-panel-toggle {
+        background: var(--iq-accent) !important;
+        }
+
+        #iq-tweaks-apply-button {
+        background: var(--iq-surface2) !important;
+        color: var(--iq-text) !important;
+        border: 1px solid var(--iq-border-strong) !important;
+        }
+
+        #iq-tweaks-apply-button:hover {
+        background: var(--iq-hover) !important;
+        color: var(--iq-white) !important;
+        }
+
+        .iq-pd-benefits {
+            background: var(--iq-surface) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .iq-pd-benefit {
+            background: transparent !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .iq-pd-benefit-title,
+        [class^="iq-pd-"] h1, [class^="iq-pd-"] h2, [class^="iq-pd-"] h3,
+        [class^="iq-pd-"] h4, [class^="iq-pd-"] h5, [class^="iq-pd-"] h6,
+        [class*=" iq-pd-"] h1, [class*=" iq-pd-"] h2, [class*=" iq-pd-"] h3,
+        [class*=" iq-pd-"] h4, [class*=" iq-pd-"] h5, [class*=" iq-pd-"] h6 {
+            color: var(--iq-text) !important;
+        }
+
+        .iq-pd-benefit-description {
+            color: var(--iq-muted) !important;
+        }
+
+        .iq-pd-benefit-description a,
+        [class^="iq-pd-"] a,
+        [class*=" iq-pd-"] a {
+            color: var(--iq-link) !important;
+        }
+
+        .iq-pd-benefit-icon {
+            color: var(--iq-accent) !important;
+        }
+
+        [class^="iq-pd-"],
+        [class*=" iq-pd-"] {
+            color: var(--iq-text) !important;
+        }
+
+        /* =====================================================================
+         * PRODUCTVERGELIJKER
+         * ===================================================================== */
+        #vergelijking,
+        .iq-compare-page,
+        .compare-table-wrap {
+            background: var(--iq-bg) !important;
+            color: var(--iq-text) !important;
+        }
+
+        #vergelijking > *,
+        #vergelijking table,
+        #vergelijking tbody,
+        #vergelijking thead,
+        #vergelijking tr {
+        background: transparent !important;
+        }
+
+        .compare-table-wrap {
+            border: 1px solid var(--iq-border) !important;
+            border-radius: 8px;
+        }
+
+        .compare-table {
+            color: var(--iq-text) !important;
+            background: var(--iq-surface) !important;
+        }
+
+        .compare-table th,
+        .compare-table td {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .compare-head,
+        .compare-card {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+        }
+
+        .compare-name,
+        .compare-name a,
+        .compare-toolbar,
+        .compare-toolbar .form-check-label,
+        .compare-availability,
+        .compare-delivery {
+            color: var(--iq-text) !important;
+        }
+
+        .compare-group {
+            background: var(--iq-surface2) !important;
+            color: var(--iq-white) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .compare-group span {
+            color: var(--iq-white) !important;
+        }
+
+        .compare-label {
+            background: var(--iq-surface-label) !important;
+            color: var(--iq-text) !important;
+        }
+
+        [data-compare-missing],
+        .compare-table .text-muted {
+            color: var(--iq-muted) !important;
+        }
+
+        .compare-outline,
+        .compare-icon {
+            background: var(--iq-surface2) !important;
+            color: var(--iq-text) !important;
+            border: 1px solid var(--iq-border) !important;
+        }
+
+        .compare-outline:hover {
+            background: var(--iq-hover) !important;
+            color: var(--iq-white) !important;
+        }
+
+        .compare-icon:hover {
+            background: var(--iq-hover) !important;
+        }
+
+        .compare-table tr:nth-child(even) td {
+            background: var(--iq-surface-alt) !important;
+        }
+
+        .compare-table tr:hover td,
+        .compare-table tr:hover th.compare-label {
+            background: var(--iq-hover) !important;
+            color: var(--iq-white) !important;
+        }
+
+        .compare-price {
+            color: var(--iq-price) !important;
+            font-weight: 600;
+        }
+
+        .compare-table .text-success {
+            color: var(--iq-success) !important;
+        }
+
+        .compare-dialog {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+            border: 1px solid var(--iq-border) !important;
+        }
+
+        .compare-dialog::backdrop {
+            background: var(--iq-backdrop);
+        }
+
+        .compare-dialog input,
+        .compare-dialog select {
+            background: var(--iq-surface2) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        /* =====================================================================
+         * ACCORDIONS, FOOTER & WIN WIDGETS
+         * ===================================================================== */
+        .accordion {
+            --bs-accordion-bg: var(--iq-surface);
+            --bs-accordion-color: var(--iq-text);
+            --bs-accordion-border-color: var(--iq-border);
+            --bs-accordion-btn-bg: var(--iq-surface);
+            --bs-accordion-btn-color: var(--iq-text);
+            --bs-accordion-active-bg: var(--iq-surface2);
+            --bs-accordion-active-color: var(--iq-white);
+        }
+
+        .accordion-item,
+        .accordion-header,
+        .accordion-button,
+        .accordion-body {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+            border-color: var(--iq-border) !important;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background: var(--iq-surface2) !important;
+            color: var(--iq-white) !important;
+            box-shadow: none !important;
+        }
+
+        .accordion-button:hover {
+            background: var(--iq-hover) !important;
+        }
+
+        .accordion-button::after {
+            filter: invert(1) brightness(2);
+        }
+
+        .accordion-body a {
+            color: var(--iq-link) !important;
+        }
+
+        [id^="win-"] .btn-light,
+        [id^="win-"] .card,
+        [id^="win-"] .content-body {
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+        }
+
+        #win-ps5 .ps5-panel * {
+        color: inherit !important;
+        }
+
+        .footer-2026-main,
+        .footer-2026-bottom {
+            background: var(--iq-footer-bg) !important;
+        }
+
+        .footer-2026 *,
+        .footer-2026 a {
+            color: var(--iq-footer-text) !important;
+        }
+
+        /* =====================================================================
+         * PS5 ACTIEPAGINA
+         * ===================================================================== */
+
+        #win-ps5 .ps5-panel {
+
+        background: var(--iq-surface) !important;
+
+        color: var(--iq-text) !important;
+
+        border-color: var(--iq-border) !important;
+        }
+
+        #win-ps5 .ps5-panel * {
+
+        color: inherit !important;
+        }
+
+        #win-ps5 .ps5-prize {
+
+        background: var(--iq-surface2) !important;
+
+        border: 1px solid var(--iq-border) !important;
+        }
+
+        #win-ps5 .ps5-credit {
+
+        background: rgba(255,255,255,.08) !important;
+
+        color: var(--iq-white) !important;
+        }
+
+        #win-ps5 .ps5-rates li {
+
+        background: var(--iq-surface2) !important;
+
+        color: var(--iq-text) !important;
+
+        border: 1px solid var(--iq-border) !important;
+        }
+
+        #win-ps5 .ps5-rates strong {
+
+        color: var(--iq-white) !important;
+        }
+
+        #win-ps5 .ps5-terms li {
+
+        color: var(--iq-text) !important;
+        }
+
+        /* =====================================================================
+         * RELATED PRODUCTS (iqrp)
+         * ===================================================================== */
+
+        .iqrp {
+
+            background: var(--iq-bg) !important;
+            color: var(--iq-text) !important;
+        }
+
+        .iqrp-heading,
+        .iqrp-toolbar,
+        .iqrp-summary {
+
+            background: transparent !important;
+            color: var(--iq-text) !important;
+        }
+
+        .iqrp-heading h2 {
+
+            color: var(--iq-text) !important;
+        }
+
+        .iqrp-tab {
+
+            background: var(--iq-surface) !important;
+            color: var(--iq-text) !important;
+
+            border: 1px solid var(--iq-border) !important;
+        }
+
+        .iqrp-tab:hover {
+
+            background: var(--iq-hover) !important;
+        }
+
+        .iqrp-tab.is-active {
+
+            background: var(--iq-accent) !important;
+            color: var(--iq-white) !important;
+
+            border-color: var(--iq-accent) !important;
+        }
+
+        /* --------------------------------------------------
+         P roduct cards   *
+         -------------------------------------------------- */
+
+        .iqrp .product-card {
+
+            background: var(--iq-surface) !important;
+
+            border: 1px solid var(--iq-border) !important;
+
+            color: var(--iq-text) !important;
+        }
+
+        .iqrp .product-card-body,
+        .iqrp .product-card-footer {
+
+            background: var(--iq-surface) !important;
+        }
+
+        .iqrp .product-card-title {
+
+            color: var(--iq-text) !important;
+
+            background: transparent !important;
+        }
+
+        .iqrp .product-card-description {
+
+            color: var(--iq-muted) !important;
+        }
+
+        .iqrp .product-card-price {
+
+            color: var(--iq-price) !important;
+        }
+
+        .iqrp .product-card-stock {
+
+            color: var(--iq-text) !important;
+        }
+
+        /* --------------------------------------------------
+         B uttons         *
+         -------------------------------------------------- */
+
+        .iqrp .product-card-choose,
+        .iqrp .iqrp-choose {
+
+            background: var(--iq-accent) !important;
+            color: var(--iq-white) !important;
+
+            border: 1px solid var(--iq-accent) !important;
+        }
+
+        .iqrp .product-card
+        `;
+
+        document.head.appendChild(style);
     }
 
     // --- BEGIN filter fixes ---
@@ -831,7 +1596,9 @@
      * Creates the control panel UI and injects it into the page footer.
      */
     function createControlPanel() {
-        const targetFooterSection = document.querySelector('section.footer-bottom');
+        const targetFooterSection =
+        document.querySelector('.footer-2026-bottom-inner') ||
+        document.querySelector('section.footer-bottom');
         if (!targetFooterSection) {
             console.warn('IQ🟣Tweaks: Target footer section not found. Control panel will not be added.');
             return;
@@ -1099,14 +1866,16 @@
      * Adds script credits to the page footer.
      */
     function addCredits() {
-        const footerDiv = document.querySelector('.footer-bottom');
+        const footerDiv =
+        document.querySelector('.footer-2026-bottom-inner') ||
+        document.querySelector('.footer-bottom');
         if (!footerDiv) return;
 
         if (footerDiv.querySelector('.iq-tweaks-credits')) return; // already added
 
         const p = document.createElement('p');
         p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} · by mini · Hop On LLC - Original idea by 🎸 · WTFPL license, 2026.`;
-        p.className = 'text-muted mb-0 iq-tweaks-credits';
+        p.className = 'mb-0 iq-tweaks-credits';
         footerDiv.appendChild(p);
     }
 
@@ -1686,6 +2455,20 @@
         // else: no usable product info found on this page — feature silently skipped.
     }
 
+    function replaceFavicon() {
+        const CUSTOM_FAVICON =
+        'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico';
+
+                    document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
+
+                    const link = document.createElement('link');
+                    link.rel = 'icon';
+                    link.type = 'image/x-icon';
+                    link.href = CUSTOM_FAVICON;
+
+                    document.head.appendChild(link);
+    }
+
     /**
      * Adds the attribute name to each attribute in the filter panel
      * @param {boolean} enable - If true, the attribute names are added to the target tags.
@@ -1717,4 +2500,6 @@
             firstITag ? targetElement.insertBefore(span, firstITag) : targetElement.appendChild(span);
         });
     }
+
+
 })();
