@@ -2550,29 +2550,6 @@
         // else: no usable product info found on this page — feature silently skipped.
     }
 
-    function reveal() {
-
-        const text =
-        atob(
-            'bWFkZSB3aXRoIGxvdmUgYnkgQ3ludGhpYQ=='
-        );
-
-        const emoji =
-        String.fromCodePoint(
-            0x1FA77,
-            0x20,
-            0x1F3F3,
-            0xFE0F,
-            0x200D,
-            0x26A7,
-            0xFE0F
-        );
-
-        showTemporaryMessage(
-            `${text} ${emoji}`
-        );
-    }
-
     function replaceFavicon() {
         const CUSTOM_FAVICON =
         'https://raw.githubusercontent.com/miniGiovanni/IQ--Tweaks/main/favicon.ico';
