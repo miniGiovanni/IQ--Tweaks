@@ -55,6 +55,44 @@
         observer.observe(document.documentElement, { childList: true, subtree: true });
     })();
 
+    (function earlyDarkMode() {
+
+        const SETTINGS_KEY = 'IQTweak_settings';
+
+        try {
+
+            const settings = GM_getValue(SETTINGS_KEY, {});
+
+            if (!settings.enableDarkMode) {
+                return;
+            }
+
+            document.documentElement.style.backgroundColor =
+            '#05070a';
+
+            const style = document.createElement('style');
+
+            style.textContent = `
+            html,
+            body,
+            .bg-white,
+            .container,
+            .container-fluid {
+
+                background: #05070a !important;
+                color: #e5e7eb !important;
+            }
+            `;
+
+            document.documentElement.appendChild(style);
+
+        } catch (e) {
+            console.error('earlyDarkMode failed', e);
+        }
+
+    })();
+
+
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
