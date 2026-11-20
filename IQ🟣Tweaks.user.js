@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.25.5
+// @version      0.25.7
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -23,6 +23,11 @@
 
 (function() {
     'use strict';
+
+    // --- Configuration and Global State ---
+    const SCRIPT_PREFIX = 'IQTweak_';
+    const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
+    const VERSION_NUMBER = "0.25.7"; // Keep in sync with @version above
 
     // --- Early logo swap (runs at document-start to prevent flicker) ---
     // Read the saved setting directly from storage before the DOM exists, then watch
@@ -91,12 +96,6 @@
         }
 
     })();
-
-
-    // --- Configuration and Global State ---
-    const SCRIPT_PREFIX = 'IQTweak_';
-    const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.25.5"; // Keep in sync with @version above
 
     // These features can be turned on/off by the user in the control panel, and the settings will be saved locally.
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
@@ -182,7 +181,16 @@
     function injectElementsBanner() {
         if (document.documentElement.dataset.iqTweaksSrcEgg) return; // already injected
         document.documentElement.dataset.iqTweaksSrcEgg = '1';
-        const border = ' ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ ';
+        const border =
+        ' ░▒▓█▓▒░░▒▓█▓▒░' +
+        String.fromCodePoint(
+            127987,
+            65039,
+            8205,
+            9895,
+            65039
+        ) +
+        '░▒▓█▓▒░░▒▓█▓▒░ ';
         const bannerLines = [
             ' ',
  border,
@@ -453,12 +461,17 @@
         }
 
         .header-2026-topbar {
-            display: none !important;
-            height: 0 !important;
-            min-height: 0 !important;
+
+            position: absolute !important;
+
+            top: -9999px !important;
+
+            left: -9999px !important;
+
+            width: 1px !important;
+            height: 1px !important;
+
             overflow: hidden !important;
-            padding: 0 !important;
-            margin: 0 !important;
         }
 
         /* =====================================================================
@@ -1039,7 +1052,30 @@
         }
 
         .iqrp .product-card
+        /* Header spacing fix */
+
+        .header-2026 .container.px-1 {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .header-2026 .row.mx-2 {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
         `;
+
+        document.querySelectorAll('.header-2026 .container.px-1')
+        .forEach(el => {
+            el.classList.remove('px-1');
+            el.classList.add('px-0');
+        });
+
+        document.querySelectorAll('.header-2026 .row.mx-2')
+        .forEach(el => {
+            el.classList.remove('mx-2');
+            el.classList.add('mx-0');
+        });
 
         document.head.appendChild(style);
     }
@@ -1915,21 +1951,42 @@
         p.textContent = `IQ🟣Tweaks ${VERSION_NUMBER} · by mini · Hop On LLC - Original idea by 🎸 · WTFPL license, 2026.`;
         p.className = 'mb-0 iq-tweaks-credits';
         footerDiv.appendChild(p);
+
+        let c = 0;
+
+        p.onclick = e => {
+
+            if (!currentSettings.enableExperimentalFeatures.value || !(e.altKey && e.ctrlKey))
+                return c = 0;
+
+            if (++c !== 5 || p.querySelector('.iq-meta'))
+                return;
+
+            p.insertAdjacentHTML(
+                'beforeend',
+                `<span class="iq-meta"> • ${
+                    String.fromCharCode(
+                        109,97,100,101,32,
+                        119,105,116,104,32,
+                        108,111,118,101,32,
+                        98,121,32,
+                        67,121,110,116,104,105,97
+                    )
+                } ${String.fromCodePoint(129655,32,127987,65039,8205,9895,65039)}</span>`
+            );
+
+        };
     }
 
     /**
-     * Toggles keyboard shortcut features for product pages.
-     * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
-     * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
-     / ***
-     * Toggles keyboard shortcut features for product pages.
-     * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
-     * Z+click → select clicked filter and all options below it in the same group.
-     * Enter → submit the filter form ("Filters toepassen").
-*
-* When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
-* are discoverable. Removed again when the feature is disabled.
-*/
+    * Toggles keyboard shortcut features for product pages.
+    * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
+    * Z+click → select clicked filter and all options below it in the same group.
+    * Enter → submit the filter form ("Filters toepassen").
+    *
+    * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
+    * are discoverable. Removed again when the feature is disabled.
+    */
     function keyboardShortcuts() {
         const isEnabled = currentSettings.enableKeyboardShortcuts.value;
         const ACTIVE_ATTR = 'data-iq-tweaks-keyboard-active';
@@ -2491,6 +2548,29 @@
             });
         }
         // else: no usable product info found on this page — feature silently skipped.
+    }
+
+    function reveal() {
+
+        const text =
+        atob(
+            'bWFkZSB3aXRoIGxvdmUgYnkgQ3ludGhpYQ=='
+        );
+
+        const emoji =
+        String.fromCodePoint(
+            0x1FA77,
+            0x20,
+            0x1F3F3,
+            0xFE0F,
+            0x200D,
+            0x26A7,
+            0xFE0F
+        );
+
+        showTemporaryMessage(
+            `${text} ${emoji}`
+        );
     }
 
     function replaceFavicon() {
