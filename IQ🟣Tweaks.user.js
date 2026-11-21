@@ -672,14 +672,22 @@
         }
 
         #iq-tweaks-apply-button {
-        background: var(--iq-surface2) !important;
-        color: var(--iq-text) !important;
-        border: 1px solid var(--iq-border-strong) !important;
+            background: var(--iq-surface2) !important;
+            color: var(--iq-text) !important;
+            border: 1px solid var(--iq-border-strong) !important;
         }
 
         #iq-tweaks-apply-button:hover {
-        background: var(--iq-hover) !important;
-        color: var(--iq-white) !important;
+            background: var(--iq-hover) !important;
+            color: var(--iq-white) !important;
+        }
+
+        #iq-tweaks-apply-button.needs-refresh {
+            background: var(--iq-accent) !important;
+            color: var(--iq-white) !important;
+            border-color: var(--iq-accent) !important;
+            box-shadow: 0 0 10px rgba(0, 107, 182, 0.7) !important;
+            animation: pulse-animation 5s infinite;
         }
 
         .iq-pd-benefits {
@@ -1051,9 +1059,6 @@
             border: 1px solid var(--iq-accent) !important;
         }
 
-        .iqrp .product-card
-        /* Header spacing fix */
-
         .header-2026 .container.px-1 {
             padding-left: 0 !important;
             padding-right: 0 !important;
@@ -1062,6 +1067,20 @@
         .header-2026 .row.mx-2 {
             margin-left: 0 !important;
             margin-right: 0 !important;
+        }
+
+        .form-check-input {
+            background-color: var(--iq-control) !important;
+            border-color: var(--iq-border-strong) !important;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--iq-accent) !important;
+            border-color: var(--iq-accent) !important;
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(0, 107, 182, 0.35) !important;
         }
         `;
 
@@ -1266,12 +1285,28 @@
         // Returns 'inStock', 'leverancier', 'onbekend', or null (unrecognised).
         const classifyText = (raw) => {
             const text = raw.toLowerCase();
-            if (text.includes('onbekende levertijd') ||
-                text.includes('levertijd onbekend'))    return 'onbekend';
-            if (text.includes('werkdagen') || text.includes('weken') ||
-                text.includes('leverancier'))           return 'leverancier';
-            if (text.includes('voorraad') || text.includes('leverbaar') ||
-                text.includes('magazijn'))              return 'inStock';
+
+            if (text.includes('onbekend') ||
+                text.includes('niet')) {
+                return 'onbekend';
+            }
+
+            if (
+                text.includes('werkdagen') ||
+                text.includes('weken') ||
+                text.includes('leverancier')
+            ) {
+                return 'leverancier';
+            }
+
+            if (
+                text.includes('voorraad') ||
+                text.includes('leverbaar') ||
+                text.includes('magazijn')
+            ) {
+                return 'inStock';
+            }
+
             return null;
         };
 
@@ -1346,9 +1381,7 @@
                 // so we allow one level of nesting there. For all other containers we stay
                 // at direct-child scope to avoid touching unrelated icons (hearts, baskets, etc.).
                 const isCardStock = container.matches('div.card-product-list-stock');
-                const icon = isCardStock
-                ? container.querySelector('i[class*="fa-"]')
-                : container.querySelector(':scope > i[class*="fa-"]');
+                const icon = container.querySelector('i[class*="fa-"]');
                 if (!icon) return;
 
                 const alreadyCorrect =
