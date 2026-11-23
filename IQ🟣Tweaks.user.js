@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         IQ🟣Tweaks
-// @version      0.25.7
+// @version      0.26.6
 // @author       mini
 // @homepage     https://github.com/miniGiovanni/IQ--Tweaks
 // @supportURL   https://github.com/miniGiovanni/IQ--Tweaks
@@ -27,7 +27,7 @@
     // --- Configuration and Global State ---
     const SCRIPT_PREFIX = 'IQTweak_';
     const SETTINGS_KEY = SCRIPT_PREFIX + 'settings';
-    const VERSION_NUMBER = "0.25.7"; // Keep in sync with @version above
+    const VERSION_NUMBER = "0.26.6"; // Keep in sync with @version above
 
     // --- Early logo swap (runs at document-start to prevent flicker) ---
     // Read the saved setting directly from storage before the DOM exists, then watch
@@ -101,45 +101,50 @@
     // Most features are true (turned on) by default, but some features are optional and thus false (turned off) by default.
     const defaultSettings = {
         enableSpecialLogo: { value: false, title: "Speciaal logo", description: "Geeft het Informatique logo een speciale look!" },
-        enableFilterApplyButton: { value: true, title: "Filter toepassen knop", description: "Voorkomt automatisch verversen van de pagina en voegt een handmatige 'Filters toepassen' knop toe." },
-        enableFilterApplyButtonAnimation: { value: true, title: "Animatie voor filterknop", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
-        enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
-        enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
-        enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
-        enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
-        enableFunFeatures: { value: true, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
-        enableSpecsConfetti: { value: false, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
-        enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
-        enableDarkMode: {
-            value: false,
-            title: "🌙 Dark Mode",
-            description: "Donkere modus voor Informatique."
-        },
-        defaultSort: {
-            type: 'select',
-            value: 'pop',
-            title: "Standaard sortering",
-            description: "De standaard sorteervolgorde op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
-            options: [
-                { label: 'Populariteit',        value: 'pop'   },
-                { label: 'Prijs (oplopend)',     value: 'pasc'  },
-        { label: 'Prijs (aflopend)',     value: 'pdesc' },
-        { label: 'Merk (oplopend)',      value: 'vasc'  },
-        { label: 'Merk (aflopend)',      value: 'vdesc' },
-            ],
-        },
-        defaultAvailability: {
-            type: 'select',
-            value: 'ss2',
-            title: "Standaard beschikbaarheid",
-            description: "De standaard beschikbaarheidsfilter op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
-            options: [
-                { label: 'Alles',             value: 'ss0' },
-                { label: 'Snel leverbaar',    value: 'ss2' },
-                { label: 'Direct leverbaar',  value: 'ss1' },
-            ],
-        },
-        enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakel experimentele functies in. Er zijn momenteel geen experimentele functies actief." },
+ enableFilterApplyButton: { value: true, title: "Filter toepassen knop", description: "Voorkomt automatisch verversen van de pagina en voegt een handmatige 'Filters toepassen' knop toe." },
+ enableFilterApplyButtonAnimation: { value: true, title: "Animatie voor filterknop", description: "De 'Filters toepassen' knop krijgt een animatie als er een filter is gewijzigd." },
+ enableArticleNumberToMorePlaces: { value: true, title: "Artikelnr. op hoofdpagina", description: "Voegt het artikelnummer toe naast de prijs op de hoofdpagina." },
+ enableStockInformationIconFix: { value: true, title: "Voorraadstatus icoon fix", description: "Maakt de iconen voor voorraadstatus (leverancier/onbekend) overal op de site consistent." },
+ enableContentFeatures: { value: false, title: "Extra content functies", description: "Voegt aantal content functies toe; content groep bij elke categorie, filter ID bij elke filter, en snelle kopieer functie." },
+ enableEanTweakersSearch: { value: false, title: "EAN Tweakers zoeken", description: "Voegt een klikbaar Tweakers-icoontje toe naast de EAN-code op een productpagina, waarmee je direct kunt zoeken op Tweakers." },
+ enableFunFeatures: { value: true, title: "Grappige functies", description: "Gewoon wat leuke easter eggs." },
+ enableSpecsConfetti: { value: false, title: "🤓 Confetti bij Specificaties", description: "Laat een paar 🤓 emojis exploderen als je op het Specificaties tabblad klikt." },
+ enableKeyboardShortcuts: { value: true, title: "Sneltoetsen", description: "Sneltoetsen op productpagina's: S = Specificaties, A = Informatie, W = terug naar categorie, Z+klik = Selecteer alle filters eronder." },
+ enableDarkMode: {
+     value: false,
+ title: "🌙 Dark Mode",
+ description: "Donkere modus voor Informatique."
+ },
+ defaultSort: {
+     type: 'select',
+ value: 'pop',
+ title: "Standaard sortering",
+ description: "De standaard sorteervolgorde op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
+ options: [
+     { label: 'Populariteit',        value: 'pop'   },
+ { label: 'Prijs (oplopend)',     value: 'pasc'  },
+ { label: 'Prijs (aflopend)',     value: 'pdesc' },
+ { label: 'Merk (oplopend)',      value: 'vasc'  },
+ { label: 'Merk (aflopend)',      value: 'vdesc' },
+ ],
+ },
+ defaultAvailability: {
+     type: 'select',
+ value: 'ss2',
+ title: "Standaard beschikbaarheid",
+ description: "De standaard beschikbaarheidsfilter op categoriepagina's, als de gebruiker nog geen keuze heeft gemaakt.",
+ options: [
+     { label: 'Alles',             value: 'ss0' },
+ { label: 'Snel leverbaar',    value: 'ss2' },
+ { label: 'Direct leverbaar',  value: 'ss1' },
+ ],
+ },
+ enableSliderFilters: {
+     value: false,
+ title: "Slider filters",
+ description: "Vervangt geselecteerde numerieke filters door een min/max slider."
+ },
+ enableExperimentalFeatures: { value: false, title: "Experimentele functies", description: "Schakel experimentele functies in. Er zijn momenteel geen experimentele functies actief." },
     };
 
     // This will hold the loaded settings. It's populated by loadSettings().
@@ -148,23 +153,56 @@
     // Linking a feature to a certain function, which apply (or remove) the feature.
     const featureApplicationMap = {
         enableSpecialLogo: specialLogo,
-        enableFilterApplyButton: filterFix,
-        enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
-        enableArticleNumberToMorePlaces: articleNumberAddition,
-        enableStockInformationIconFix: stockInformationIconFix,
-        enableContentFeatures: contentFeatures,
-        enableEanTweakersSearch: eanTweakersSearch,
-        enableFunFeatures: funFeatures,
-        enableSpecsConfetti: specsConfetti,
-        enableKeyboardShortcuts: keyboardShortcuts,
-        defaultSort: categoryLinkDefaults,
-        defaultAvailability: categoryLinkDefaults,
-        enableDarkMode: darkMode,
-        enableExperimentalFeatures: experimentalFeatures,
+ enableFilterApplyButton: filterFix,
+ enableFilterApplyButtonAnimation: applyFilterApplyButtonAnimation,
+ enableArticleNumberToMorePlaces: articleNumberAddition,
+ enableStockInformationIconFix: stockInformationIconFix,
+ enableContentFeatures: contentFeatures,
+ enableEanTweakersSearch: eanTweakersSearch,
+ enableFunFeatures: funFeatures,
+ enableSpecsConfetti: specsConfetti,
+ enableKeyboardShortcuts: keyboardShortcuts,
+ defaultSort: categoryLinkDefaults,
+     defaultAvailability: categoryLinkDefaults,
+         enableDarkMode: darkMode,
+ enableExperimentalFeatures: experimentalFeatures,
+ enableSliderFilters: sliderFilters,
     };
 
     // Map to store references to dynamically created event listeners for cleanup.
     const formInputListeners = new Map();
+
+    // Which filters get a slider
+    const SLIDER_FILTERS = [
+        1118, // Refresh Rate (monitors, G082)
+        57, // Formaat Scherm (max.) (monitors, G082)
+        323, // Schermgrootte (laptops, G05)
+        312, // Geheugen (laptops, G05)
+        321, // SSD Grootte (laptops, G05)
+        1437, // Maximum grafische kaart lengte (cases, G004)
+        18, // Aantal 3,5" bays (HDD/intern) (G004)
+        15, // Aantal 5,25" bays (G004)
+        19, // Aantal 2,5" bays (G004)
+        565, // Vermogen (G171)
+        578, // Aantal SATA connector (G171)
+        940, // M.2 Sloten (G889, G801)
+        925, // Aantal SATA 3 connectors (G889, G801)
+        21, // Hoogte (G014)
+        820, // Geheugen Hoeveelheid (G166, G188)
+        22, // Diepte (G188)
+        112, // Capaciteit (G559, SSD)
+        113, // Capaciteit (G028, 2.5 HDD)
+        145, // Capaciteit (G026, 3.5 HDD)
+        672, // Totale capciteit (G906, G725)
+        605, // Kloksnelheid (G906, G725, G522)
+        664, // Cas latency (G906, G725, G522)
+        154, // Opslagcapaciteit (G029, G740)
+        127, // Opslagcapaciteit (G022)
+        113, // Capaciteit (G229, G452)
+        2221, // Aantal Switching RJ45 poorten (G087)
+        297, // Lengte (G092, G044, G612, G650)
+        666, // Aantal processorkernen (G611, G021)
+    ];
 
     // --- Script Entry Point ---
     // Run the initializer function once the DOM is ready.
@@ -191,8 +229,8 @@
             65039
         ) +
         '░▒▓█▓▒░░▒▓█▓▒░ ';
-        const bannerLines = [
-            ' ',
+ const bannerLines = [
+     ' ',
  border,
  ' ',
  ` █  IQ🟣Tweaks ${VERSION_NUMBER}`,
@@ -203,11 +241,11 @@
  ' ',
  border,
  ' ',
-        ];
-        [...bannerLines].reverse().forEach(line => {
-            const comment = document.createComment(line);
-            document.documentElement.insertBefore(comment, document.documentElement.firstChild);
-        });
+ ];
+ [...bannerLines].reverse().forEach(line => {
+     const comment = document.createComment(line);
+     document.documentElement.insertBefore(comment, document.documentElement.firstChild);
+ });
     }
 
     function initialize() {
@@ -451,10 +489,6 @@
             border-color: var(--iq-border-strong) !important;
         }
 
-        .mix-blend-multiply {
-            mix-blend-mode: normal !important;
-        }
-
         .img-wrap,
         .img-wrap-productcard {
             background: var(--iq-control) !important;
@@ -672,22 +706,22 @@
         }
 
         #iq-tweaks-apply-button {
-            background: var(--iq-surface2) !important;
-            color: var(--iq-text) !important;
-            border: 1px solid var(--iq-border-strong) !important;
+        background: var(--iq-surface2) !important;
+        color: var(--iq-text) !important;
+        border: 1px solid var(--iq-border-strong) !important;
         }
 
         #iq-tweaks-apply-button:hover {
-            background: var(--iq-hover) !important;
-            color: var(--iq-white) !important;
+        background: var(--iq-hover) !important;
+        color: var(--iq-white) !important;
         }
 
         #iq-tweaks-apply-button.needs-refresh {
-            background: var(--iq-accent) !important;
-            color: var(--iq-white) !important;
-            border-color: var(--iq-accent) !important;
-            box-shadow: 0 0 10px rgba(0, 107, 182, 0.7) !important;
-            animation: pulse-animation 5s infinite;
+        background: var(--iq-accent) !important;
+        color: var(--iq-white) !important;
+        border-color: var(--iq-accent) !important;
+        box-shadow: 0 0 10px rgba(0, 107, 182, 0.7) !important;
+        animation: pulse-animation 5s infinite;
         }
 
         .iq-pd-benefits {
@@ -1006,8 +1040,8 @@
         }
 
         /* --------------------------------------------------
-         P roduct cards   *
-         -------------------------------------------------- */
+         *         P roduct cards   *
+         *         -------------------------------------------------- */
 
         .iqrp .product-card {
 
@@ -1047,8 +1081,8 @@
         }
 
         /* --------------------------------------------------
-         B uttons         *
-         -------------------------------------------------- */
+         *         B uttons         *
+         *         -------------------------------------------------- */
 
         .iqrp .product-card-choose,
         .iqrp .iqrp-choose {
@@ -1081,6 +1115,25 @@
 
         .form-check-input:focus {
             box-shadow: 0 0 0 0.25rem rgba(0, 107, 182, 0.35) !important;
+        }
+
+        .card-banner .img-bg {
+            mix-blend-mode: normal !important;
+        }
+
+        img.mix-blend-multiply,
+        .mix-blend-multiply {
+            mix-blend-mode: normal !important;
+        }
+
+        div[style*="background-color:#fff4e5"] {
+            background-color: #663399 !important; /* RebeccaPurple */
+            color: #ffffff !important;
+        }
+
+        div[style*="background-color:#fff4e5"] a,
+        div[style*="background-color:#fff4e5"] .fw-semibold {
+            color: #ffffff !important;
         }
         `;
 
@@ -1289,25 +1342,25 @@
             if (text.includes('onbekend') ||
                 text.includes('niet')) {
                 return 'onbekend';
-            }
+                }
 
-            if (
-                text.includes('werkdagen') ||
-                text.includes('weken') ||
-                text.includes('leverancier')
-            ) {
-                return 'leverancier';
-            }
+                if (
+                    text.includes('werkdagen') ||
+                    text.includes('weken') ||
+                    text.includes('leverancier')
+                ) {
+                    return 'leverancier';
+                }
 
-            if (
-                text.includes('voorraad') ||
-                text.includes('leverbaar') ||
-                text.includes('magazijn')
-            ) {
-                return 'inStock';
-            }
+                if (
+                    text.includes('voorraad') ||
+                    text.includes('leverbaar') ||
+                    text.includes('magazijn')
+                ) {
+                    return 'inStock';
+                }
 
-            return null;
+                return null;
         };
 
         // --- Helper: swap an existing <i> icon's classes ---
@@ -1363,8 +1416,8 @@
             // share an ancestor with stock text.
             const STOCK_CONTAINER_SELECTORS = [
                 'div.card-product-list-stock',      // list pages
-                'dt.col-lg-8.col-7.border-bottom',  // product page spec table
-                'small.text-muted',                 // winkelwagen / search rows
+ 'dt.col-lg-8.col-7.border-bottom',  // product page spec table
+ 'small.text-muted',                 // winkelwagen / search rows
             ];
 
             document.querySelectorAll(STOCK_CONTAINER_SELECTORS.join(', ')).forEach(container => {
@@ -1707,6 +1760,139 @@
             75%  { opacity: 1; }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
         }
+        .iq-slider-filter {
+            margin-bottom: 1rem;
+        }
+
+        .iq-slider-range {
+            margin-top: .5rem;
+            margin-bottom: .5rem;
+        }
+
+        .iq-slider-marks {
+
+            display:flex;
+
+            justify-content:space-between;
+
+            margin-top: 4px;
+
+            margin-bottom:12px;
+
+            pointer-events:none;
+        }
+
+        .iq-slider-mark {
+
+            width:2px;
+
+            height:8px;
+
+            border-radius:1px;
+
+            background:#006bb6;
+        }
+
+        .iq-slider-filter {
+            margin-bottom: 1rem;
+        }
+
+        .iq-slider-values {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            font-size:1rem;
+            margin-bottom:10px;
+        }
+
+        .iq-slider-count {
+            font-weight:600;
+            font-size:1rem;
+            color:#006bb6;
+        }
+
+        .iq-slider-range {
+
+            margin-bottom:4px;
+        }
+
+        .iq-slider-range.noUi-target {
+
+            height:6px;
+
+            border:none;
+
+            background:#dee2e6;
+
+            box-shadow:none;
+        }
+
+        .iq-slider-range .noUi-connect {
+
+            background:#006bb6;
+        }
+
+        .iq-slider-range .noUi-handle {
+
+            width:16px;
+            height:16px;
+
+            top:-5px;
+            right:-8px;
+
+            border-radius:50%;
+
+            border:2px solid #006bb6;
+
+            background:white;
+
+            box-shadow:none;
+
+        }
+        .noUi-tooltip {
+            background: #006bb6;
+            border: none;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+
+        .iq-slider-range .noUi-handle::before,
+        .iq-slider-range .noUi-handle::after {
+
+            display:none;
+        }
+        .noUi-tooltip {
+            display: none;
+        }
+
+        .iq-slider-dragging .noUi-tooltip {
+            display: block;
+        }
+        .iq-slider-dragging .noUi-tooltip {
+            display: block;
+        }
+
+        .iq-slider-count-wrapper {
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+
+        .iq-slider-clear {
+            color:#dc3545;
+            cursor:pointer;
+            font-weight:bold;
+            font-size:0.9em;
+            opacity:.75;
+        }
+
+        .iq-slider-clear:hover {
+            opacity:1;
+        }
+
         `);
     }
 
@@ -2024,14 +2210,14 @@
     }
 
     /**
-    * Toggles keyboard shortcut features for product pages.
-    * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
-    * Z+click → select clicked filter and all options below it in the same group.
-    * Enter → submit the filter form ("Filters toepassen").
-    *
-    * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
-    * are discoverable. Removed again when the feature is disabled.
-    */
+     * Toggles keyboard shortcut features for product pages.
+     * S → Specificaties tab, A → Informatie tab, W → parent category breadcrumb.
+     * Z+click → select clicked filter and all options below it in the same group.
+     * Enter → submit the filter form ("Filters toepassen").
+     *
+     * When enabled, injects "(S)" and "(A)" hints into the tab labels so the shortcuts
+     * are discoverable. Removed again when the feature is disabled.
+     */
     function keyboardShortcuts() {
         const isEnabled = currentSettings.enableKeyboardShortcuts.value;
         const ACTIVE_ATTR = 'data-iq-tweaks-keyboard-active';
@@ -2401,8 +2587,8 @@
                 pixel.id = 'iq-tweaks-phantom-pixel';
                 pixel.style.cssText = [
                     'width: 2px', 'height: 2px', 'background-color: #000',
- 'position: fixed', 'top: 40%', 'left: 50%',
- 'transform: translateX(-50%)', 'z-index: 999999',
+                    'position: fixed', 'top: 40%', 'left: 50%',
+                    'transform: translateX(-50%)', 'z-index: 999999',
  'pointer-events: none',
                 ].join('; ');
                 document.body.appendChild(pixel);
@@ -2641,5 +2827,372 @@
         });
     }
 
+    /**
+     * Adds a slider to some attributes, to more easily select multiple values
+     * (i.e. selecting 144Hz, 165Hz, 240Hz, etc.).
+     */
+    function sliderFilters() {
+
+        if (!currentSettings.enableSliderFilters.value) {
+            removeSliderFilters();
+            return;
+        }
+
+        SLIDER_FILTERS.forEach(createSliderFilter);
+    }
+
+    function createSliderFilter(filterId) {
+        const firstCheckbox =
+        document.querySelector(
+            `input[name="at${filterId}"]`
+        );
+
+        if (!firstCheckbox) {
+            return;
+        }
+
+        const article =
+        firstCheckbox.closest(
+            'article.filter-group'
+        );
+
+        if (!article) {
+            return;
+        }
+
+        const cardBody =
+        article.querySelector('.card-body.pe-3');
+
+        if (cardBody) {
+            cardBody.style.paddingTop = '0px';
+        }
+
+        if (
+            article.querySelector('.iq-slider-filter')
+        ) {
+            return;
+        }
+
+        const values = [
+            ...article.querySelectorAll(
+                `input[name="at${filterId}"]`
+            )
+        ]
+        .map(cb => {
+
+            const text =
+            cb.closest('label')
+            ?.querySelector('.form-check-label')
+            ?.textContent
+            ?.trim();
+
+            const value =
+            parseFloat(text);
+
+            const unit =
+            text.replace(
+                /^[\d., ]+/,
+                ''
+            ).trim();
+
+            if (Number.isNaN(value)) {
+                return null;
+            }
+
+            const count =
+            parseInt(
+                cb.closest('label')
+                ?.querySelector('.badge')
+                ?.textContent?.trim() || '0',
+                     10
+            );
+
+            return {
+                value,
+                unit,
+                count,
+                checkbox: cb
+            };
+
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.value - b.value);
+
+        if (values.length < 2) {
+            return;
+        }
+
+        const selectedValues =
+            values
+            .filter(entry =>
+            entry.checkbox.checked
+            )
+            .map(entry =>
+            entry.value
+            );
+
+        const startMin =
+            selectedValues.length
+            ? values.findIndex(
+                v => v.value ===
+                Math.min(...selectedValues)
+            )
+            : 0;
+
+        const startMax =
+            selectedValues.length
+            ? values.findIndex(
+                v => v.value ===
+                Math.max(...selectedValues)
+            )
+            : values.length - 1;
+
+        const container =
+        document.createElement('div');
+
+        container.className =
+        'iq-slider-filter mb-3';
+
+        container.innerHTML = `
+
+                <div class="iq-slider-values">
+
+                <span class="iq-slider-min-label">
+                ${values[startMin].value} ${values[startMin].unit}
+                </span>
+
+                <span class="iq-slider-count-wrapper">
+                <span class="iq-slider-count">
+                Alle producten
+                </span>
+
+                <span
+                class="iq-slider-clear"
+                style="display:none;"
+                >
+                ✕
+                </span>
+                </span>
+
+                <span class="iq-slider-max-label">
+                ${values[startMax].value} ${values[startMax].unit}
+                </span>
+
+                </div>
+
+                <div class="iq-slider-range"></div>
+
+                <div class="iq-slider-marks"></div>
+                `;
+
+                const marks =
+                container.querySelector(
+                    '.iq-slider-marks'
+                );
+
+                marks.innerHTML =
+                values.map(v => {
+
+                    const opacity =
+                    Math.min(
+                        1,
+                        v.count / 20
+                    );
+
+                    return `
+                    <span
+                    class="iq-slider-mark"
+                    style="opacity:${opacity}"
+                    ></span>
+                    `;
+
+                }).join('');
+
+            article
+            .querySelector('.card-body')
+            ?.prepend(container);
+
+            const slider =
+            container.querySelector(
+                '.iq-slider-range'
+            );
+
+            const minLabel =
+            container.querySelector(
+                '.iq-slider-min-label'
+            );
+
+            const maxLabel =
+            container.querySelector(
+                '.iq-slider-max-label'
+            );
+            const countLabel =
+            container.querySelector(
+                '.iq-slider-count'
+            );
+
+            const clearButton =
+            container.querySelector(
+                '.iq-slider-clear'
+            );
+
+            let armed =
+            selectedValues.length > 0;
+            let clearingSelection = false;
+
+            noUiSlider.create(slider, {
+                start: [startMin, startMax],
+                step: 0.01,
+                connect: true,
+
+                tooltips: [
+                    {
+                        to: value => {
+                            const idx = Math.round(value);
+                            return `${values[idx].value} ${values[idx].unit}`;
+                        }
+                    },
+                    {
+                        to: value => {
+                            const idx = Math.round(value);
+                            return `${values[idx].value} ${values[idx].unit}`;
+                        }
+                    }
+                ],
+
+                range: {
+                    min: 0,
+                    max: values.length - 1
+                }
+            });
+
+            slider.noUiSlider.on('start', () => {
+                slider.classList.add('iq-slider-dragging');
+            });
+
+            slider.noUiSlider.on(
+                'start',
+                () => {
+                    armed = true;
+                }
+            );
+
+            slider.noUiSlider.on('end', (valuesRaw) => {
+                slider.classList.remove('iq-slider-dragging');
+
+                slider.noUiSlider.set([
+                    Math.round(valuesRaw[0]),
+                                      Math.round(valuesRaw[1])
+                ]);
+            });
+
+            slider.noUiSlider.on(
+                'update',
+                ([min, max]) => {
+
+                    const minIndex =
+                    Math.round(min);
+
+                    const maxIndex =
+                    Math.round(max);
+
+                    if (clearingSelection) {
+                        return;
+                    }
+
+                    const totalProducts =
+                    values
+                    .filter((_, index) =>
+                    index >= minIndex &&
+                    index <= maxIndex
+                    )
+                    .reduce(
+                        (sum, item) =>
+                        sum + item.count,
+                        0
+                    );
+
+                    countLabel.textContent =
+                    `${totalProducts} producten`;
+
+                    minLabel.textContent =
+                    `${values[minIndex].value} ${
+                        values[minIndex].unit
+                    }`;
+
+                    maxLabel.textContent =
+                    `${values[maxIndex].value} ${
+                        values[maxIndex].unit
+                    }`;
+
+                    if (!armed) {
+                        countLabel.textContent =
+                        'Alle producten';
+                        return;
+                    }
+
+                    values.forEach(
+                        (entry, index) => {
+
+                            entry.checkbox.checked =
+                            index >= minIndex &&
+                            index <= maxIndex;
+
+                        }
+                    );
+
+                    document
+                    .getElementById(
+                        'iq-tweaks-apply-button'
+                    )
+                    ?.classList.add(
+                        'needs-refresh'
+                    );
+
+                    clearButton.style.display =
+                    (minIndex === 0 &&
+                    maxIndex === values.length - 1)
+                    ? 'none'
+                    : 'block';
+                }
+            );
+
+            clearButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                clearingSelection = true;
+
+                values.forEach(entry => {
+                    entry.checkbox.checked = false;
+                });
+
+                armed = false;
+
+                slider.noUiSlider.set([
+                    0,
+                    values.length - 1
+                ]);
+
+                countLabel.textContent = 'Alle producten';
+
+                document
+                .getElementById('iq-tweaks-apply-button')
+                ?.classList.add('needs-refresh');
+
+                clearButton.style.display = 'none';
+
+                clearingSelection = false;
+            });
+
+    }
+
+    function removeSliderFilters() {
+
+        document
+        .querySelectorAll('.iq-slider-filter')
+        .forEach(el => el.remove());
+
+    }
 
 })();
